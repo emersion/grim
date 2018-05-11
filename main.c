@@ -145,7 +145,25 @@ static void get_output_layout_extents(struct grim_state *state, int32_t *x,
 	*height = y2 - y1;
 }
 
-int main() {
+static cairo_status_t write_func(void *closure, const unsigned char *data,
+		unsigned int length) {
+	FILE *f = closure;
+
+	size_t written = fwrite(data, sizeof(unsigned char), length, f);
+	if (written < length) {
+		return CAIRO_STATUS_WRITE_ERROR;
+	}
+
+	return CAIRO_STATUS_SUCCESS;
+}
+
+int main(int argc, char *argv[]) {
+	if (argc != 2) {
+		fprintf(stderr, "usage: grim <output-file>\n");
+		return EXIT_FAILURE;
+	}
+	char *output_filename = argv[1];
+
 	struct grim_state state = {0};
 	wl_list_init(&state.outputs);
 
@@ -253,7 +271,16 @@ int main() {
 		cairo_surface_destroy(output_surface);
 	}
 
-	cairo_surface_write_to_png(surface, "wayland-screenshot.png");
+	cairo_status_t status;
+	if (strcmp(output_filename, "-") == 0) {
+		status = cairo_surface_write_to_png_stream(surface, write_func, stdout);
+	} else {
+		status = cairo_surface_write_to_png(surface, output_filename);
+	}
+	if (status != CAIRO_STATUS_SUCCESS) {
+		fprintf(stderr, "failed to write output file\n");
+		return EXIT_FAILURE;
+	}
 
 	cairo_destroy(cairo);
 	cairo_surface_destroy(surface);
