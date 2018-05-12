@@ -168,6 +168,10 @@ static double get_output_rotation(enum wl_output_transform transform) {
 	return 0;
 }
 
+static int get_output_flipped(enum wl_output_transform transform) {
+	return transform & WL_OUTPUT_TRANSFORM_FLIPPED ? -1 : 1;
+}
+
 static cairo_status_t write_func(void *closure, const unsigned char *data,
 		unsigned int length) {
 	FILE *f = closure;
@@ -289,6 +293,8 @@ int main(int argc, char *argv[]) {
 		apply_output_transform(output->transform,
 			&raw_output_width, &raw_output_height);
 
+		int flipped = get_output_flipped(output->transform);
+
 		cairo_surface_t *output_surface = cairo_image_surface_create_for_data(
 			buffer->data, CAIRO_FORMAT_ARGB32, buffer->width, buffer->height,
 			buffer->stride);
@@ -300,10 +306,10 @@ int main(int argc, char *argv[]) {
 		cairo_matrix_init_identity(&matrix);
 		cairo_matrix_translate(&matrix,
 			(double)output->width / 2, (double)output->height / 2);
-		cairo_matrix_scale(&matrix,
-			(double)raw_output_width / output_width,
-			(double)raw_output_height / output_height);
 		cairo_matrix_rotate(&matrix, get_output_rotation(output->transform));
+		cairo_matrix_scale(&matrix,
+			(double)raw_output_width / output_width * flipped,
+			(double)raw_output_height / output_height);
 		cairo_matrix_translate(&matrix,
 			-(double)output_width / 2, -(double)output_height / 2);
 		cairo_matrix_translate(&matrix, -output_x, -output_y);
