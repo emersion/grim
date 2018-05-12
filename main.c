@@ -1,9 +1,11 @@
+#define _XOPEN_SOURCE 500
+#include <cairo.h>
 #include <limits.h>
+#include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <cairo.h>
 
 #include "grim.h"
 #include "buffer.h"
@@ -145,6 +147,27 @@ static void get_output_layout_extents(struct grim_state *state, int32_t *x,
 	*height = y2 - y1;
 }
 
+static void apply_output_transform(enum wl_output_transform transform,
+		int32_t *width, int32_t *height) {
+	if (transform & WL_OUTPUT_TRANSFORM_90) {
+		int32_t tmp = *width;
+		*width = *height;
+		*height = tmp;
+	}
+}
+
+static double get_output_rotation(enum wl_output_transform transform) {
+	switch (transform & ~WL_OUTPUT_TRANSFORM_FLIPPED) {
+	case WL_OUTPUT_TRANSFORM_90:
+		return M_PI / 2;
+	case WL_OUTPUT_TRANSFORM_180:
+		return M_PI;
+	case WL_OUTPUT_TRANSFORM_270:
+		return 3 * M_PI / 2;
+	}
+	return 0;
+}
+
 static cairo_status_t write_func(void *closure, const unsigned char *data,
 		unsigned int length) {
 	FILE *f = closure;
@@ -204,11 +227,12 @@ int main(int argc, char *argv[]) {
 
 		struct grim_output *output;
 		wl_list_for_each(output, &state.outputs, link) {
-			// TODO: guess with transform
 			output->logical.x = output->x;
 			output->logical.y = output->y;
 			output->logical.width = output->width / output->scale;
 			output->logical.height = output->height / output->scale;
+			apply_output_transform(output->transform,
+				&output->logical.width, &output->logical.height);
 		}
 	}
 
@@ -260,6 +284,11 @@ int main(int argc, char *argv[]) {
 		int32_t output_width = output->logical.width;
 		int32_t output_height = output->logical.height;
 
+		int32_t raw_output_width = output->width;
+		int32_t raw_output_height = output->height;
+		apply_output_transform(output->transform,
+			&raw_output_width, &raw_output_height);
+
 		cairo_surface_t *output_surface = cairo_image_surface_create_for_data(
 			buffer->data, CAIRO_FORMAT_ARGB32, buffer->width, buffer->height,
 			buffer->stride);
@@ -269,11 +298,15 @@ int main(int argc, char *argv[]) {
 		// All transformations are inverted
 		cairo_matrix_t matrix;
 		cairo_matrix_init_identity(&matrix);
+		cairo_matrix_translate(&matrix,
+			(double)output->width / 2, (double)output->height / 2);
 		cairo_matrix_scale(&matrix,
-			(double)output->width / output_width,
-			(double)output->height / output_height);
+			(double)raw_output_width / output_width,
+			(double)raw_output_height / output_height);
+		cairo_matrix_rotate(&matrix, get_output_rotation(output->transform));
+		cairo_matrix_translate(&matrix,
+			-(double)output_width / 2, -(double)output_height / 2);
 		cairo_matrix_translate(&matrix, -output_x, -output_y);
-		// TODO: cairo_matrix_rotate();
 		cairo_pattern_set_matrix(output_pattern, &matrix);
 
 		cairo_set_source(cairo, output_pattern);
