@@ -204,11 +204,11 @@ int main(int argc, char *argv[]) {
 
 		struct grim_output *output;
 		wl_list_for_each(output, &state.outputs, link) {
-			// TODO: guess with transform and scale
+			// TODO: guess with transform
 			output->logical.x = output->x;
 			output->logical.y = output->y;
-			output->logical.width = output->width;
-			output->logical.height = output->height;
+			output->logical.width = output->width / output->scale;
+			output->logical.height = output->height / output->scale;
 		}
 	}
 
@@ -255,18 +255,31 @@ int main(int argc, char *argv[]) {
 			return EXIT_FAILURE;
 		}
 
+		int32_t output_x = output->logical.x - x;
+		int32_t output_y = output->logical.y - y;
+		int32_t output_width = output->logical.width;
+		int32_t output_height = output->logical.height;
+
 		cairo_surface_t *output_surface = cairo_image_surface_create_for_data(
 			buffer->data, CAIRO_FORMAT_ARGB32, buffer->width, buffer->height,
 			buffer->stride);
 		cairo_pattern_t *output_pattern =
 			cairo_pattern_create_for_surface(output_surface);
 
+		// All transformations are inverted
+		cairo_matrix_t matrix;
+		cairo_matrix_init_identity(&matrix);
+		cairo_matrix_scale(&matrix,
+			(double)output->width / output_width,
+			(double)output->height / output_height);
+		cairo_matrix_translate(&matrix, -output_x, -output_y);
+		// TODO: cairo_matrix_rotate();
+		cairo_pattern_set_matrix(output_pattern, &matrix);
+
 		cairo_set_source(cairo, output_pattern);
 		cairo_pattern_destroy(output_pattern);
 
-		cairo_rectangle(cairo, output->logical.x - x, output->logical.y - y,
-			output->logical.width, output->logical.height);
-		cairo_fill(cairo);
+		cairo_paint(cairo);
 
 		cairo_surface_destroy(output_surface);
 	}
