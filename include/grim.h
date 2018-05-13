@@ -33,6 +33,8 @@ struct grim_output {
 	struct {
 		int32_t x, y;
 		int32_t width, height;
+
+		double scale; // guessed from the logical size
 	} logical;
 
 	struct grim_buffer *buffer;
