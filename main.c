@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "grim.h"
 #include "buffer.h"
@@ -192,12 +193,36 @@ static cairo_status_t write_func(void *closure, const unsigned char *data,
 	return CAIRO_STATUS_SUCCESS;
 }
 
+static const char usage[] =
+	"Usage: grim [options...] <output-file>\n"
+	"\n"
+	"  -h              Show help message and quit.\n"
+	"  -s <factor>     Set the output image scale factor. Defaults to the\n"
+	"                  greatest output scale factor.\n";
+
 int main(int argc, char *argv[]) {
-	if (argc != 2) {
-		fprintf(stderr, "usage: grim <output-file>\n");
+	double scale = 1.0;
+	bool use_greatest_scale = true;
+	int opt;
+	while ((opt = getopt(argc, argv, "hs:")) != -1) {
+		switch (opt) {
+		case 'h':
+			printf("%s", usage);
+			return EXIT_SUCCESS;
+		case 's':
+			use_greatest_scale = false;
+			scale = strtod(optarg, NULL);
+			break;
+		default:
+			return EXIT_FAILURE;
+		}
+	}
+
+	if (optind >= argc) {
+		fprintf(stderr, "%s", usage);
 		return EXIT_FAILURE;
 	}
-	char *output_filename = argv[1];
+	char *output_filename = argv[optind];
 
 	struct grim_state state = {0};
 	wl_list_init(&state.outputs);
@@ -254,10 +279,9 @@ int main(int argc, char *argv[]) {
 		return EXIT_FAILURE;
 	}
 
-	double scale = 1;
 	struct grim_output *output;
 	wl_list_for_each(output, &state.outputs, link) {
-		if (output->logical.scale > scale) {
+		if (use_greatest_scale && output->logical.scale > scale) {
 			scale = output->logical.scale;
 		}
 
@@ -315,7 +339,7 @@ int main(int argc, char *argv[]) {
 		cairo_pattern_t *output_pattern =
 			cairo_pattern_create_for_surface(output_surface);
 
-		// All transformations are inverted
+		// All transformations are in pattern-local coordinates
 		cairo_matrix_t matrix;
 		cairo_matrix_init_identity(&matrix);
 		cairo_matrix_translate(&matrix,
