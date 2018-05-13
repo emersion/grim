@@ -1,0 +1,15 @@
+image: archlinux
+packages:
+  - meson
+  - wayland
+  - wayland-protocols
+  - cairo
+sources:
+  - https://github.com/emerison/grim
+tasks:
+  - setup: |
+      cd grim
+      meson build
+  - build: |
+      cd grim
+      ninja -C build
