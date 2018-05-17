@@ -17,13 +17,14 @@ grim_inc = include_directories('include')
 
 cairo = dependency('cairo')
 wayland_client = dependency('wayland-client')
-wayland_protos = dependency('wayland-protocols')
+wayland_protos = dependency('wayland-protocols', version: '>=1.14')
 
 subdir('protocol')
 
 executable(
 	'grim',
 	files([
+		'box.c',
 		'buffer.c',
 		'main.c',
 	]),

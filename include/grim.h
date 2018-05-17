@@ -3,6 +3,7 @@
 
 #include <wayland-client.h>
 
+#include "box.h"
 #include "orbital_screenshooter-client-protocol.h"
 #include "xdg-output-unstable-v1-client-protocol.h"
 
@@ -25,17 +26,13 @@ struct grim_output {
 	struct zxdg_output_v1 *xdg_output;
 	struct wl_list link;
 
-	int32_t x, y;
-	int32_t width, height;
+	struct grim_box geometry;
 	enum wl_output_transform transform;
 	int32_t scale;
 
-	struct {
-		int32_t x, y;
-		int32_t width, height;
-
-		double scale; // guessed from the logical size
-	} logical;
+	struct grim_box logical_geometry;
+	double logical_scale; // guessed from the logical size
+	char *name;
 
 	struct grim_buffer *buffer;
 	struct orbital_screenshot *orbital_screenshot;

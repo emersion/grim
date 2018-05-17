@@ -26,6 +26,12 @@ output the file to the standard output instead.
 	Set the output image's scale factor to _factor_. By default, the scale
 	factor is set to the highest of all outputs.
 
+*-g* "<x>,<y> <width>x<height>"
+	Set the region to capture, in layout coordinates.
+
+*-o* <output>
+	Set the output name to capture.
+
 # AUTHORS
 
 Maintained by Simon Ser <contact@emersion.fr>, who is assisted by other

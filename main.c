@@ -18,17 +18,17 @@ static void get_output_layout_extents(struct grim_state *state, int32_t *x,
 
 	struct grim_output *output;
 	wl_list_for_each(output, &state->outputs, link) {
-		if (output->logical.x < x1) {
-			x1 = output->logical.x;
+		if (output->logical_geometry.x < x1) {
+			x1 = output->logical_geometry.x;
 		}
-		if (output->logical.y < y1) {
-			y1 = output->logical.y;
+		if (output->logical_geometry.y < y1) {
+			y1 = output->logical_geometry.y;
 		}
-		if (output->logical.x + output->logical.width > x2) {
-			x2 = output->logical.x + output->logical.width;
+		if (output->logical_geometry.x + output->logical_geometry.width > x2) {
+			x2 = output->logical_geometry.x + output->logical_geometry.width;
 		}
-		if (output->logical.y + output->logical.height > y2) {
-			y2 = output->logical.y + output->logical.height;
+		if (output->logical_geometry.y + output->logical_geometry.height > y2) {
+			y2 = output->logical_geometry.y + output->logical_geometry.height;
 		}
 	}
 
@@ -79,16 +79,16 @@ static void xdg_output_handle_logical_position(void *data,
 		struct zxdg_output_v1 *xdg_output, int32_t x, int32_t y) {
 	struct grim_output *output = data;
 
-	output->logical.x = x;
-	output->logical.y = y;
+	output->logical_geometry.x = x;
+	output->logical_geometry.y = y;
 }
 
 static void xdg_output_handle_logical_size(void *data,
 		struct zxdg_output_v1 *xdg_output, int32_t width, int32_t height) {
 	struct grim_output *output = data;
 
-	output->logical.width = width;
-	output->logical.height = height;
+	output->logical_geometry.width = width;
+	output->logical_geometry.height = height;
 }
 
 static void xdg_output_handle_done(void *data,
@@ -96,16 +96,29 @@ static void xdg_output_handle_done(void *data,
 	struct grim_output *output = data;
 
 	// Guess the output scale from the logical size
-	int32_t width = output->width;
-	int32_t height = output->height;
+	int32_t width = output->geometry.width;
+	int32_t height = output->geometry.height;
 	apply_output_transform(output->transform, &width, &height);
-	output->logical.scale = (double)width / output->logical.width;
+	output->logical_scale = (double)width / output->logical_geometry.width;
+}
+
+static void xdg_output_handle_name(void *data,
+		struct zxdg_output_v1 *xdg_output, const char *name) {
+	struct grim_output *output = data;
+	output->name = strdup(name);
+}
+
+static void xdg_output_handle_description(void *data,
+		struct zxdg_output_v1 *xdg_output, const char *name) {
+	// No-op
 }
 
 static const struct zxdg_output_v1_listener xdg_output_listener = {
 	.logical_position = xdg_output_handle_logical_position,
 	.logical_size = xdg_output_handle_logical_size,
 	.done = xdg_output_handle_done,
+	.name = xdg_output_handle_name,
+	.description = xdg_output_handle_description,
 };
 
 
@@ -115,8 +128,8 @@ static void output_handle_geometry(void *data, struct wl_output *wl_output,
 		int32_t transform) {
 	struct grim_output *output = data;
 
-	output->x = x;
-	output->y = y;
+	output->geometry.x = x;
+	output->geometry.y = y;
 	output->transform = transform;
 }
 
@@ -125,8 +138,8 @@ static void output_handle_mode(void *data, struct wl_output *wl_output,
 	struct grim_output *output = data;
 
 	if ((flags & WL_OUTPUT_MODE_CURRENT) != 0) {
-		output->width = width;
-		output->height = height;
+		output->geometry.width = width;
+		output->geometry.height = height;
 	}
 }
 
@@ -155,8 +168,9 @@ static void handle_global(void *data, struct wl_registry *registry,
 	if (strcmp(interface, wl_shm_interface.name) == 0) {
 		state->shm = wl_registry_bind(registry, name, &wl_shm_interface, 1);
 	} else if (strcmp(interface, zxdg_output_manager_v1_interface.name) == 0) {
+		uint32_t bind_version = (version > 2) ? 2 : version;
 		state->xdg_output_manager = wl_registry_bind(registry, name,
-			&zxdg_output_manager_v1_interface, 1);
+			&zxdg_output_manager_v1_interface, bind_version);
 	} else if (strcmp(interface, wl_output_interface.name) == 0) {
 		struct grim_output *output = calloc(1, sizeof(struct grim_output));
 		output->state = state;
@@ -198,13 +212,17 @@ static const char usage[] =
 	"\n"
 	"  -h              Show help message and quit.\n"
 	"  -s <factor>     Set the output image scale factor. Defaults to the\n"
-	"                  greatest output scale factor.\n";
+	"                  greatest output scale factor.\n"
+	"  -g <geometry>   Set the region to capture.\n"
+	"  -o <output>     Set the output name to capture.\n";
 
 int main(int argc, char *argv[]) {
 	double scale = 1.0;
 	bool use_greatest_scale = true;
+	struct grim_box *geometry = NULL;
+	char *geometry_output = NULL;
 	int opt;
-	while ((opt = getopt(argc, argv, "hs:")) != -1) {
+	while ((opt = getopt(argc, argv, "hs:g:o:")) != -1) {
 		switch (opt) {
 		case 'h':
 			printf("%s", usage);
@@ -212,6 +230,16 @@ int main(int argc, char *argv[]) {
 		case 's':
 			use_greatest_scale = false;
 			scale = strtod(optarg, NULL);
+			break;
+		case 'g':
+			geometry = calloc(1, sizeof(struct grim_box));
+			if (!parse_box(geometry, optarg)) {
+				fprintf(stderr, "invalid geometry\n");
+				return EXIT_FAILURE;
+			}
+			break;
+		case 'o':
+			geometry_output = strdup(optarg);
 			break;
 		default:
 			return EXIT_FAILURE;
@@ -264,13 +292,16 @@ int main(int argc, char *argv[]) {
 
 		struct grim_output *output;
 		wl_list_for_each(output, &state.outputs, link) {
-			output->logical.x = output->x;
-			output->logical.y = output->y;
-			output->logical.width = output->width / output->scale;
-			output->logical.height = output->height / output->scale;
-			output->logical.scale = output->scale;
+			output->logical_geometry.x = output->geometry.x;
+			output->logical_geometry.y = output->geometry.y;
+			output->logical_geometry.width =
+				output->geometry.width / output->scale;
+			output->logical_geometry.height =
+				output->geometry.height / output->scale;
 			apply_output_transform(output->transform,
-				&output->logical.width, &output->logical.height);
+				&output->logical_geometry.width,
+				&output->logical_geometry.height);
+			output->logical_scale = output->scale;
 		}
 	}
 
@@ -281,11 +312,24 @@ int main(int argc, char *argv[]) {
 
 	struct grim_output *output;
 	wl_list_for_each(output, &state.outputs, link) {
-		if (use_greatest_scale && output->logical.scale > scale) {
-			scale = output->logical.scale;
+		if (use_greatest_scale && output->logical_scale > scale) {
+			scale = output->logical_scale;
 		}
+		if (geometry_output != NULL && output->name != NULL &&
+				strcmp(output->name, geometry_output) == 0) {
+			geometry = calloc(1, sizeof(struct grim_box));
+			memcpy(geometry, &output->logical_geometry, sizeof(struct grim_box));
+		}
+	}
 
-		output->buffer = create_buffer(state.shm, output->width, output->height);
+	if (geometry_output != NULL && geometry == NULL) {
+		fprintf(stderr, "unknown output '%s'", geometry_output);
+		return EXIT_FAILURE;
+	}
+
+	wl_list_for_each(output, &state.outputs, link) {
+		output->buffer = create_buffer(state.shm, output->geometry.width,
+			output->geometry.height);
 		if (output->buffer == NULL) {
 			fprintf(stderr, "failed to create buffer\n");
 			return EXIT_FAILURE;
@@ -321,13 +365,13 @@ int main(int argc, char *argv[]) {
 			return EXIT_FAILURE;
 		}
 
-		int32_t output_x = output->logical.x - x;
-		int32_t output_y = output->logical.y - y;
-		int32_t output_width = output->logical.width;
-		int32_t output_height = output->logical.height;
+		int32_t output_x = output->logical_geometry.x - x;
+		int32_t output_y = output->logical_geometry.y - y;
+		int32_t output_width = output->logical_geometry.width;
+		int32_t output_height = output->logical_geometry.height;
 
-		int32_t raw_output_width = output->width;
-		int32_t raw_output_height = output->height;
+		int32_t raw_output_width = output->geometry.width;
+		int32_t raw_output_height = output->geometry.height;
 		apply_output_transform(output->transform,
 			&raw_output_width, &raw_output_height);
 
@@ -343,8 +387,8 @@ int main(int argc, char *argv[]) {
 		cairo_matrix_t matrix;
 		cairo_matrix_init_identity(&matrix);
 		cairo_matrix_translate(&matrix,
-			(double)output->width / 2,
-			(double)output->height / 2);
+			(double)output->geometry.width / 2,
+			(double)output->geometry.height / 2);
 		cairo_matrix_rotate(&matrix, get_output_rotation(output->transform));
 		cairo_matrix_scale(&matrix,
 			(double)raw_output_width / output_width * output_flipped,
@@ -364,15 +408,27 @@ int main(int argc, char *argv[]) {
 		cairo_surface_destroy(output_surface);
 	}
 
+	cairo_surface_t *subsurface = surface;
+	if (geometry != NULL) {
+		subsurface = cairo_surface_create_for_rectangle(surface,
+			geometry->x * scale, geometry->y * scale,
+			geometry->width * scale, geometry->height * scale);
+	}
+
 	cairo_status_t status;
 	if (strcmp(output_filename, "-") == 0) {
-		status = cairo_surface_write_to_png_stream(surface, write_func, stdout);
+		status =
+			cairo_surface_write_to_png_stream(subsurface, write_func, stdout);
 	} else {
-		status = cairo_surface_write_to_png(surface, output_filename);
+		status = cairo_surface_write_to_png(subsurface, output_filename);
 	}
 	if (status != CAIRO_STATUS_SUCCESS) {
 		fprintf(stderr, "failed to write output file\n");
 		return EXIT_FAILURE;
+	}
+
+	if (subsurface != surface) {
+		cairo_surface_destroy(subsurface);
 	}
 
 	cairo_destroy(cairo);
@@ -381,6 +437,7 @@ int main(int argc, char *argv[]) {
 	struct grim_output *output_tmp;
 	wl_list_for_each_safe(output, output_tmp, &state.outputs, link) {
 		wl_list_remove(&output->link);
+		free(output->name);
 		if (output->orbital_screenshot != NULL) {
 			orbital_screenshot_destroy(output->orbital_screenshot);
 		}
@@ -398,5 +455,7 @@ int main(int argc, char *argv[]) {
 	wl_shm_destroy(state.shm);
 	wl_registry_destroy(state.registry);
 	wl_display_disconnect(state.display);
+	free(geometry);
+	free(geometry_output);
 	return EXIT_SUCCESS;
 }
