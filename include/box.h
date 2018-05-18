@@ -10,5 +10,7 @@ struct grim_box {
 };
 
 bool parse_box(struct grim_box *box, const char *str);
+bool is_empty_box(struct grim_box *box);
+bool intersect_box(struct grim_box *a, struct grim_box *b);
 
 #endif

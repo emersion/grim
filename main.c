@@ -11,8 +11,8 @@
 #include "grim.h"
 #include "buffer.h"
 
-static void get_output_layout_extents(struct grim_state *state, int32_t *x,
-		int32_t *y, int32_t *width, int32_t *height) {
+static void get_output_layout_extents(struct grim_state *state,
+		struct grim_box *box) {
 	int32_t x1 = INT_MAX, y1 = INT_MAX;
 	int32_t x2 = INT_MIN, y2 = INT_MIN;
 
@@ -32,10 +32,10 @@ static void get_output_layout_extents(struct grim_state *state, int32_t *x,
 		}
 	}
 
-	*x = x1;
-	*y = y1;
-	*width = x2 - x1;
-	*height = y2 - y1;
+	box->x = x1;
+	box->y = y1;
+	box->width = x2 - x1;
+	box->height = y2 - y1;
 }
 
 static void apply_output_transform(enum wl_output_transform transform,
@@ -310,24 +310,34 @@ int main(int argc, char *argv[]) {
 		return EXIT_FAILURE;
 	}
 
+	if (geometry_output != NULL) {
+		struct grim_output *output;
+		wl_list_for_each(output, &state.outputs, link) {
+			if (output->name != NULL &&
+					strcmp(output->name, geometry_output) == 0) {
+				geometry = calloc(1, sizeof(struct grim_box));
+				memcpy(geometry, &output->logical_geometry,
+					sizeof(struct grim_box));
+			}
+		}
+
+		if (geometry == NULL) {
+			fprintf(stderr, "unknown output '%s'", geometry_output);
+			return EXIT_FAILURE;
+		}
+	}
+
+	size_t n_pending = 0;
 	struct grim_output *output;
 	wl_list_for_each(output, &state.outputs, link) {
+		if (geometry != NULL &&
+				!intersect_box(geometry, &output->logical_geometry)) {
+			continue;
+		}
 		if (use_greatest_scale && output->logical_scale > scale) {
 			scale = output->logical_scale;
 		}
-		if (geometry_output != NULL && output->name != NULL &&
-				strcmp(output->name, geometry_output) == 0) {
-			geometry = calloc(1, sizeof(struct grim_box));
-			memcpy(geometry, &output->logical_geometry, sizeof(struct grim_box));
-		}
-	}
 
-	if (geometry_output != NULL && geometry == NULL) {
-		fprintf(stderr, "unknown output '%s'", geometry_output);
-		return EXIT_FAILURE;
-	}
-
-	wl_list_for_each(output, &state.outputs, link) {
 		output->buffer = create_buffer(state.shm, output->geometry.width,
 			output->geometry.height);
 		if (output->buffer == NULL) {
@@ -339,34 +349,45 @@ int main(int argc, char *argv[]) {
 			output->buffer->wl_buffer);
 		orbital_screenshot_add_listener(output->orbital_screenshot,
 			&orbital_screenshot_listener, output);
+
+		++n_pending;
+	}
+
+	if (n_pending == 0) {
+		fprintf(stderr, "screenshot region is empty\n");
+		return EXIT_FAILURE;
 	}
 
 	bool done = false;
-	size_t n = wl_list_length(&state.outputs);
 	while (!done && wl_display_dispatch(state.display) != -1) {
-		done = (n == state.n_done);
+		done = (state.n_done == n_pending);
 	}
 	if (!done) {
 		fprintf(stderr, "failed to screenshoot all outputs\n");
 		return EXIT_FAILURE;
 	}
 
-	int32_t x, y, width, height;
-	get_output_layout_extents(&state, &x, &y, &width, &height);
+	if (geometry == NULL) {
+		geometry = calloc(1, sizeof(struct grim_box));
+		get_output_layout_extents(&state, geometry);
+	}
 
 	cairo_surface_t *surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32,
-		width * scale, height * scale);
+		geometry->width * scale, geometry->height * scale);
 	cairo_t *cairo = cairo_create(surface);
 
 	wl_list_for_each(output, &state.outputs, link) {
 		struct grim_buffer *buffer = output->buffer;
+		if (buffer == NULL) {
+			continue;
+		}
 		if (buffer->format != WL_SHM_FORMAT_ARGB8888) {
 			fprintf(stderr, "unsupported format\n");
 			return EXIT_FAILURE;
 		}
 
-		int32_t output_x = output->logical_geometry.x - x;
-		int32_t output_y = output->logical_geometry.y - y;
+		int32_t output_x = output->logical_geometry.x - geometry->x;
+		int32_t output_y = output->logical_geometry.y - geometry->y;
 		int32_t output_width = output->logical_geometry.width;
 		int32_t output_height = output->logical_geometry.height;
 
@@ -408,27 +429,16 @@ int main(int argc, char *argv[]) {
 		cairo_surface_destroy(output_surface);
 	}
 
-	cairo_surface_t *subsurface = surface;
-	if (geometry != NULL) {
-		subsurface = cairo_surface_create_for_rectangle(surface,
-			geometry->x * scale, geometry->y * scale,
-			geometry->width * scale, geometry->height * scale);
-	}
-
 	cairo_status_t status;
 	if (strcmp(output_filename, "-") == 0) {
 		status =
-			cairo_surface_write_to_png_stream(subsurface, write_func, stdout);
+			cairo_surface_write_to_png_stream(surface, write_func, stdout);
 	} else {
-		status = cairo_surface_write_to_png(subsurface, output_filename);
+		status = cairo_surface_write_to_png(surface, output_filename);
 	}
 	if (status != CAIRO_STATUS_SUCCESS) {
 		fprintf(stderr, "failed to write output file\n");
 		return EXIT_FAILURE;
-	}
-
-	if (subsurface != surface) {
-		cairo_surface_destroy(subsurface);
 	}
 
 	cairo_destroy(cairo);
