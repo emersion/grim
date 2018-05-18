@@ -421,6 +421,8 @@ int main(int argc, char *argv[]) {
 		cairo_matrix_scale(&matrix, 1 / scale, 1 / scale);
 		cairo_pattern_set_matrix(output_pattern, &matrix);
 
+		cairo_pattern_set_filter(output_pattern, CAIRO_FILTER_BEST);
+
 		cairo_set_source(cairo, output_pattern);
 		cairo_pattern_destroy(output_pattern);
 
