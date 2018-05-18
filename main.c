@@ -1,68 +1,15 @@
-#define _XOPEN_SOURCE 500
+#define _POSIX_C_SOURCE 200809L
 #include <cairo.h>
-#include <limits.h>
-#include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
-#include "grim.h"
 #include "buffer.h"
-
-static void get_output_layout_extents(struct grim_state *state,
-		struct grim_box *box) {
-	int32_t x1 = INT_MAX, y1 = INT_MAX;
-	int32_t x2 = INT_MIN, y2 = INT_MIN;
-
-	struct grim_output *output;
-	wl_list_for_each(output, &state->outputs, link) {
-		if (output->logical_geometry.x < x1) {
-			x1 = output->logical_geometry.x;
-		}
-		if (output->logical_geometry.y < y1) {
-			y1 = output->logical_geometry.y;
-		}
-		if (output->logical_geometry.x + output->logical_geometry.width > x2) {
-			x2 = output->logical_geometry.x + output->logical_geometry.width;
-		}
-		if (output->logical_geometry.y + output->logical_geometry.height > y2) {
-			y2 = output->logical_geometry.y + output->logical_geometry.height;
-		}
-	}
-
-	box->x = x1;
-	box->y = y1;
-	box->width = x2 - x1;
-	box->height = y2 - y1;
-}
-
-static void apply_output_transform(enum wl_output_transform transform,
-		int32_t *width, int32_t *height) {
-	if (transform & WL_OUTPUT_TRANSFORM_90) {
-		int32_t tmp = *width;
-		*width = *height;
-		*height = tmp;
-	}
-}
-
-static double get_output_rotation(enum wl_output_transform transform) {
-	switch (transform & ~WL_OUTPUT_TRANSFORM_FLIPPED) {
-	case WL_OUTPUT_TRANSFORM_90:
-		return M_PI / 2;
-	case WL_OUTPUT_TRANSFORM_180:
-		return M_PI;
-	case WL_OUTPUT_TRANSFORM_270:
-		return 3 * M_PI / 2;
-	}
-	return 0;
-}
-
-static int get_output_flipped(enum wl_output_transform transform) {
-	return transform & WL_OUTPUT_TRANSFORM_FLIPPED ? -1 : 1;
-}
-
+#include "grim.h"
+#include "output-layout.h"
+#include "render.h"
 
 static void orbital_screenshot_handle_done(void *data,
 		struct orbital_screenshot *screenshot) {
@@ -292,16 +239,7 @@ int main(int argc, char *argv[]) {
 
 		struct grim_output *output;
 		wl_list_for_each(output, &state.outputs, link) {
-			output->logical_geometry.x = output->geometry.x;
-			output->logical_geometry.y = output->geometry.y;
-			output->logical_geometry.width =
-				output->geometry.width / output->scale;
-			output->logical_geometry.height =
-				output->geometry.height / output->scale;
-			apply_output_transform(output->transform,
-				&output->logical_geometry.width,
-				&output->logical_geometry.height);
-			output->logical_scale = output->scale;
+			guess_output_logical_geometry(output);
 		}
 	}
 
@@ -372,69 +310,14 @@ int main(int argc, char *argv[]) {
 		get_output_layout_extents(&state, geometry);
 	}
 
-	cairo_surface_t *surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32,
-		geometry->width * scale, geometry->height * scale);
-	cairo_t *cairo = cairo_create(surface);
-
-	wl_list_for_each(output, &state.outputs, link) {
-		struct grim_buffer *buffer = output->buffer;
-		if (buffer == NULL) {
-			continue;
-		}
-		if (buffer->format != WL_SHM_FORMAT_ARGB8888) {
-			fprintf(stderr, "unsupported format\n");
-			return EXIT_FAILURE;
-		}
-
-		int32_t output_x = output->logical_geometry.x - geometry->x;
-		int32_t output_y = output->logical_geometry.y - geometry->y;
-		int32_t output_width = output->logical_geometry.width;
-		int32_t output_height = output->logical_geometry.height;
-
-		int32_t raw_output_width = output->geometry.width;
-		int32_t raw_output_height = output->geometry.height;
-		apply_output_transform(output->transform,
-			&raw_output_width, &raw_output_height);
-
-		int output_flipped = get_output_flipped(output->transform);
-
-		cairo_surface_t *output_surface = cairo_image_surface_create_for_data(
-			buffer->data, CAIRO_FORMAT_ARGB32, buffer->width, buffer->height,
-			buffer->stride);
-		cairo_pattern_t *output_pattern =
-			cairo_pattern_create_for_surface(output_surface);
-
-		// All transformations are in pattern-local coordinates
-		cairo_matrix_t matrix;
-		cairo_matrix_init_identity(&matrix);
-		cairo_matrix_translate(&matrix,
-			(double)output->geometry.width / 2,
-			(double)output->geometry.height / 2);
-		cairo_matrix_rotate(&matrix, get_output_rotation(output->transform));
-		cairo_matrix_scale(&matrix,
-			(double)raw_output_width / output_width * output_flipped,
-			(double)raw_output_height / output_height);
-		cairo_matrix_translate(&matrix,
-			-(double)output_width / 2,
-			-(double)output_height / 2);
-		cairo_matrix_translate(&matrix, -output_x, -output_y);
-		cairo_matrix_scale(&matrix, 1 / scale, 1 / scale);
-		cairo_pattern_set_matrix(output_pattern, &matrix);
-
-		cairo_pattern_set_filter(output_pattern, CAIRO_FILTER_BEST);
-
-		cairo_set_source(cairo, output_pattern);
-		cairo_pattern_destroy(output_pattern);
-
-		cairo_paint(cairo);
-
-		cairo_surface_destroy(output_surface);
+	cairo_surface_t *surface = render(&state, geometry, scale);
+	if (surface == NULL) {
+		return EXIT_FAILURE;
 	}
 
 	cairo_status_t status;
 	if (strcmp(output_filename, "-") == 0) {
-		status =
-			cairo_surface_write_to_png_stream(surface, write_func, stdout);
+		status = cairo_surface_write_to_png_stream(surface, write_func, stdout);
 	} else {
 		status = cairo_surface_write_to_png(surface, output_filename);
 	}
@@ -443,7 +326,6 @@ int main(int argc, char *argv[]) {
 		return EXIT_FAILURE;
 	}
 
-	cairo_destroy(cairo);
 	cairo_surface_destroy(surface);
 
 	struct grim_output *output_tmp;

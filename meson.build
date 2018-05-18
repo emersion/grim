@@ -27,6 +27,8 @@ executable(
 		'box.c',
 		'buffer.c',
 		'main.c',
+		'output-layout.c',
+		'render.c',
 	]),
 	dependencies: [
 		cairo,
