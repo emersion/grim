@@ -29,6 +29,8 @@ output the file to the standard output instead.
 *-g* "<x>,<y> <width>x<height>"
 	Set the region to capture, in layout coordinates.
 
+	If set to *-*, read the region from the standard input instead.
+
 *-o* <output>
 	Set the output name to capture.
 

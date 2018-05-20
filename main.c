@@ -142,12 +142,12 @@ static const struct wl_registry_listener registry_listener = {
 	.global_remove = handle_global_remove,
 };
 
-static cairo_status_t write_func(void *closure, const unsigned char *data,
-		unsigned int length) {
-	FILE *f = closure;
+static cairo_status_t write_func(void *data, const unsigned char *buf,
+		unsigned int len) {
+	FILE *f = data;
 
-	size_t written = fwrite(data, sizeof(unsigned char), length, f);
-	if (written < length) {
+	size_t written = fwrite(buf, sizeof(unsigned char), len, f);
+	if (written < len) {
 		return CAIRO_STATUS_WRITE_ERROR;
 	}
 
@@ -178,14 +178,35 @@ int main(int argc, char *argv[]) {
 			use_greatest_scale = false;
 			scale = strtod(optarg, NULL);
 			break;
-		case 'g':
+		case 'g':;
+			char *geometry_str = NULL;
+			if (strcmp(optarg, "-") == 0) {
+				size_t n = 0;
+				ssize_t nread = getline(&geometry_str, &n, stdin);
+				if (nread < 0) {
+					free(geometry_str);
+					fprintf(stderr, "failed to read a line from stdin\n");
+					return EXIT_FAILURE;
+				}
+
+				if (nread > 0 && geometry_str[nread - 1] == '\n') {
+					geometry_str[nread - 1] = '\0';
+				}
+			} else {
+				geometry_str = strdup(optarg);
+			}
+
+			free(geometry);
 			geometry = calloc(1, sizeof(struct grim_box));
-			if (!parse_box(geometry, optarg)) {
+			if (!parse_box(geometry, geometry_str)) {
 				fprintf(stderr, "invalid geometry\n");
 				return EXIT_FAILURE;
 			}
+
+			free(geometry_str);
 			break;
 		case 'o':
+			free(geometry_output);
 			geometry_output = strdup(optarg);
 			break;
 		default:
