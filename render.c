@@ -10,6 +10,13 @@ cairo_surface_t *render(struct grim_state *state, struct grim_box *geometry,
 		geometry->width * scale, geometry->height * scale);
 	cairo_t *cairo = cairo_create(surface);
 
+	// Clear
+	cairo_save(cairo);
+	cairo_set_source_rgba(cairo, 0, 0, 0, 0);
+	cairo_set_operator(cairo, CAIRO_OPERATOR_SOURCE);
+	cairo_paint(cairo);
+	cairo_restore(cairo);
+
 	struct grim_output *output;
 	wl_list_for_each(output, &state->outputs, link) {
 		struct grim_buffer *buffer = output->buffer;
