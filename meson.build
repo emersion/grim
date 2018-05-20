@@ -15,9 +15,11 @@ add_project_arguments('-Wno-unused-parameter', language: 'c')
 
 grim_inc = include_directories('include')
 
+cc = meson.get_compiler('c')
 cairo = dependency('cairo')
 wayland_client = dependency('wayland-client')
 wayland_protos = dependency('wayland-protocols', version: '>=1.14')
+math = cc.find_library('m')
 
 subdir('protocol')
 
@@ -33,6 +35,7 @@ executable(
 	dependencies: [
 		cairo,
 		client_protos,
+		math,
 		wayland_client,
 	],
 	include_directories: [grim_inc],
