@@ -1,6 +1,7 @@
 # grim
 
-Grab images from a Wayland compositor.
+Grab images from a Wayland compositor. Works well with
+[slurp](https://github.com/emersion/slurp).
 
 It currently works on Sway 1.0 alpha.
 
@@ -17,6 +18,15 @@ Then run:
 meson build
 ninja -C build
 build/grim
+```
+
+## Usage
+
+```shell
+grim screenshot.png # Screenshoot all outputs
+grim -o DP-1 screenshot.png # Screenshoot a specific output
+grim -g "10,20 300x400" screenshot.png # Screenshoot a region
+slurp | grim -g - screenshot.png # Select a region and screenshoot it
 ```
 
 ## License
