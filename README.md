@@ -27,6 +27,7 @@ grim screenshot.png # Screenshoot all outputs
 grim -o DP-1 screenshot.png # Screenshoot a specific output
 grim -g "10,20 300x400" screenshot.png # Screenshoot a region
 slurp | grim -g - screenshot.png # Select a region and screenshoot it
+grim $(date +'%Y-%m-%d-%H%M%S_grim.png') # Use a timestamped filename
 ```
 
 ## License
