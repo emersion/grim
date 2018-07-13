@@ -4,7 +4,7 @@
 #include <wayland-client.h>
 
 #include "box.h"
-#include "orbital_screenshooter-client-protocol.h"
+#include "wlr-screencopy-unstable-v1-client-protocol.h"
 #include "xdg-output-unstable-v1-client-protocol.h"
 
 struct grim_state {
@@ -12,7 +12,7 @@ struct grim_state {
 	struct wl_registry *registry;
 	struct wl_shm *shm;
 	struct zxdg_output_manager_v1 *xdg_output_manager;
-	struct orbital_screenshooter *orbital_screenshooter;
+	struct zwlr_screencopy_manager_v1 *screencopy_manager;
 	struct wl_list outputs;
 
 	size_t n_done;
@@ -35,7 +35,8 @@ struct grim_output {
 	char *name;
 
 	struct grim_buffer *buffer;
-	struct orbital_screenshot *orbital_screenshot;
+	struct zwlr_screencopy_frame_v1 *screencopy_frame;
+	uint32_t screencopy_frame_flags; // enum zwlr_screencopy_frame_v1_flags
 };
 
 #endif

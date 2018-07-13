@@ -11,14 +11,46 @@
 #include "output-layout.h"
 #include "render.h"
 
-static void orbital_screenshot_handle_done(void *data,
-		struct orbital_screenshot *screenshot) {
+static void screencopy_frame_handle_buffer(void *data,
+		struct zwlr_screencopy_frame_v1 *frame, uint32_t format, uint32_t width,
+		uint32_t height, uint32_t stride) {
+	struct grim_output *output = data;
+
+	output->buffer =
+		create_buffer(output->state->shm, format, width, height, stride);
+	if (output->buffer == NULL) {
+		fprintf(stderr, "failed to create buffer\n");
+		exit(EXIT_FAILURE);
+	}
+
+	zwlr_screencopy_frame_v1_copy(frame, output->buffer->wl_buffer);
+}
+
+static void screencopy_frame_handle_flags(void *data,
+		struct zwlr_screencopy_frame_v1 *frame, uint32_t flags) {
+	struct grim_output *output = data;
+	output->screencopy_frame_flags = flags;
+}
+
+static void screencopy_frame_handle_ready(void *data,
+		struct zwlr_screencopy_frame_v1 *frame, uint32_t tv_sec_hi,
+		uint32_t tv_sec_lo, uint32_t tv_nsec) {
 	struct grim_output *output = data;
 	++output->state->n_done;
 }
 
-static const struct orbital_screenshot_listener orbital_screenshot_listener = {
-	.done = orbital_screenshot_handle_done,
+static void screencopy_frame_handle_failed(void *data,
+		struct zwlr_screencopy_frame_v1 *frame) {
+	struct grim_output *output = data;
+	fprintf(stderr, "failed to copy output %s\n", output->name);
+	exit(EXIT_FAILURE);
+}
+
+static const struct zwlr_screencopy_frame_v1_listener screencopy_frame_listener = {
+	.buffer = screencopy_frame_handle_buffer,
+	.flags = screencopy_frame_handle_flags,
+	.ready = screencopy_frame_handle_ready,
+	.failed = screencopy_frame_handle_failed,
 };
 
 
@@ -126,9 +158,9 @@ static void handle_global(void *data, struct wl_registry *registry,
 			&wl_output_interface, 3);
 		wl_output_add_listener(output->wl_output, &output_listener, output);
 		wl_list_insert(&state->outputs, &output->link);
-	} else if (strcmp(interface, orbital_screenshooter_interface.name) == 0) {
-		state->orbital_screenshooter = wl_registry_bind(registry, name,
-			&orbital_screenshooter_interface, 1);
+	} else if (strcmp(interface, zwlr_screencopy_manager_v1_interface.name) == 0) {
+		state->screencopy_manager = wl_registry_bind(registry, name,
+			&zwlr_screencopy_manager_v1_interface, 1);
 	}
 }
 
@@ -264,8 +296,8 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
-	if (state.orbital_screenshooter == NULL) {
-		fprintf(stderr, "compositor doesn't support orbital_screenshooter\n");
+	if (state.screencopy_manager == NULL) {
+		fprintf(stderr, "compositor doesn't support wlr-screencopy-unstable-v1\n");
 		return EXIT_FAILURE;
 	}
 
@@ -297,17 +329,10 @@ int main(int argc, char *argv[]) {
 			scale = output->logical_scale;
 		}
 
-		output->buffer = create_buffer(state.shm, output->geometry.width,
-			output->geometry.height);
-		if (output->buffer == NULL) {
-			fprintf(stderr, "failed to create buffer\n");
-			return EXIT_FAILURE;
-		}
-		output->orbital_screenshot = orbital_screenshooter_shoot(
-			state.orbital_screenshooter, output->wl_output,
-			output->buffer->wl_buffer);
-		orbital_screenshot_add_listener(output->orbital_screenshot,
-			&orbital_screenshot_listener, output);
+		output->screencopy_frame = zwlr_screencopy_manager_v1_capture_output(
+			state.screencopy_manager, 1, output->wl_output);
+		zwlr_screencopy_frame_v1_add_listener(output->screencopy_frame,
+			&screencopy_frame_listener, output);
 
 		++n_pending;
 	}
@@ -353,8 +378,8 @@ int main(int argc, char *argv[]) {
 	wl_list_for_each_safe(output, output_tmp, &state.outputs, link) {
 		wl_list_remove(&output->link);
 		free(output->name);
-		if (output->orbital_screenshot != NULL) {
-			orbital_screenshot_destroy(output->orbital_screenshot);
+		if (output->screencopy_frame != NULL) {
+			zwlr_screencopy_frame_v1_destroy(output->screencopy_frame);
 		}
 		destroy_buffer(output->buffer);
 		if (output->xdg_output != NULL) {
@@ -363,7 +388,7 @@ int main(int argc, char *argv[]) {
 		wl_output_release(output->wl_output);
 		free(output);
 	}
-	orbital_screenshooter_destroy(state.orbital_screenshooter);
+	zwlr_screencopy_manager_v1_destroy(state.screencopy_manager);
 	if (state.xdg_output_manager != NULL) {
 		zxdg_output_manager_v1_destroy(state.xdg_output_manager);
 	}

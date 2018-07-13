@@ -38,7 +38,9 @@ cairo_surface_t *render(struct grim_state *state, struct grim_box *geometry,
 		apply_output_transform(output->transform,
 			&raw_output_width, &raw_output_height);
 
-		int output_flipped = get_output_flipped(output->transform);
+		int output_flipped_x = get_output_flipped(output->transform);
+		int output_flipped_y = output->screencopy_frame_flags &
+			ZWLR_SCREENCOPY_FRAME_V1_FLAGS_Y_INVERT ? -1 : 1;
 
 		cairo_surface_t *output_surface = cairo_image_surface_create_for_data(
 			buffer->data, CAIRO_FORMAT_ARGB32, buffer->width, buffer->height,
@@ -54,8 +56,8 @@ cairo_surface_t *render(struct grim_state *state, struct grim_box *geometry,
 			(double)output->geometry.height / 2);
 		cairo_matrix_rotate(&matrix, get_output_rotation(output->transform));
 		cairo_matrix_scale(&matrix,
-			(double)raw_output_width / output_width * output_flipped,
-			(double)raw_output_height / output_height);
+			(double)raw_output_width / output_width * output_flipped_x,
+			(double)raw_output_height / output_height * output_flipped_y);
 		cairo_matrix_translate(&matrix,
 			-(double)output_width / 2,
 			-(double)output_height / 2);

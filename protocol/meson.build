@@ -23,7 +23,7 @@ wayland_scanner_client = generator(
 
 client_protocols = [
 	[wl_protocol_dir, 'unstable/xdg-output/xdg-output-unstable-v1.xml'],
-	['orbital_screenshooter.xml'],
+	['wlr-screencopy-unstable-v1.xml'],
 ]
 
 client_protos_src = []

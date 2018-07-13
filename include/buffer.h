@@ -11,8 +11,8 @@ struct grim_buffer {
 	enum wl_shm_format format;
 };
 
-struct grim_buffer *create_buffer(struct wl_shm *shm, int32_t width,
-	int32_t height);
+struct grim_buffer *create_buffer(struct wl_shm *shm, enum wl_shm_format format,
+	int32_t width, int32_t height, int32_t stride);
 void destroy_buffer(struct grim_buffer *buffer);
 
 #endif

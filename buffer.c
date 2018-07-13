@@ -35,11 +35,8 @@ static int create_pool_file(size_t size, char **name) {
 	return fd;
 }
 
-struct grim_buffer *create_buffer(struct wl_shm *shm, int32_t width,
-		int32_t height) {
-	const enum wl_shm_format wl_fmt = WL_SHM_FORMAT_ARGB8888;
-
-	uint32_t stride = 4 * width;
+struct grim_buffer *create_buffer(struct wl_shm *shm, enum wl_shm_format wl_fmt,
+		int32_t width, int32_t height, int32_t stride) {
 	size_t size = stride * height;
 
 	char *name;
