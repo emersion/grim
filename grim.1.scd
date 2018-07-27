@@ -33,11 +33,11 @@ output the file to the standard output instead.
 
 *-t* <type>
 	Set the output image's file format to _type_. By default, the filetype
-	is set to png filetype.
+	is set to *png* filetype, valid values are *png* or *jpeg*.
 
 *-q* <quality>
 	Set the output jpeg's filetype compression rate to _quality_. By default,
-	the jpeg quality is 80, valid values are between 0-100.
+	the jpeg quality is *80*, valid values are between 0-100.
 
 *-o* <output>
 	Set the output name to capture.

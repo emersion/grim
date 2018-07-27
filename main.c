@@ -194,7 +194,7 @@ static const char usage[] =
 	"  -s <factor>     Set the output image scale factor. Defaults to the\n"
 	"                  greatest output scale factor.\n"
 	"  -g <geometry>   Set the region to capture.\n"
-	"  -t <type>       Set the output filetype.\n"
+	"  -t <type>       Set the output filetype. Defaults to png, [png|jpeg].\n"
 	"  -q <quality>    Set the jpeg filetype quality 0-100. Defaults to 80.\n"
 	"  -o <output>     Set the output name to capture.\n";
 
