@@ -394,14 +394,14 @@ int main(int argc, char *argv[]) {
 		if (strcmp(output_filetype, "png") == 0) {
 			status = cairo_surface_write_to_png_stream(surface, write_func, stdout);
 		} else {
-			status = cairo_image_surface_write_to_jpeg_stream(
+			status = cairo_surface_write_to_jpeg_stream(
 				surface, write_func, stdout, jpeg_quality);
 		}
 	} else {
 		if (strcmp(output_filetype, "png") == 0) {
 			status = cairo_surface_write_to_png(surface, output_filename);
 		} else {
-			status = cairo_image_surface_write_to_jpeg(
+			status = cairo_surface_write_to_jpeg(
 				surface, output_filename, jpeg_quality);
 		}
 	}
