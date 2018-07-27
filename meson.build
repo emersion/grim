@@ -20,6 +20,7 @@ cairo = dependency('cairo')
 wayland_client = dependency('wayland-client')
 wayland_protos = dependency('wayland-protocols', version: '>=1.14')
 math = cc.find_library('m')
+jpeg = cc.find_library('libjpeg')
 
 subdir('protocol')
 
@@ -35,6 +36,7 @@ executable(
 	dependencies: [
 		cairo,
 		client_protos,
+		jpeg,
 		math,
 		wayland_client,
 	],
