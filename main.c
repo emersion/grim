@@ -10,6 +10,7 @@
 #include "grim.h"
 #include "output-layout.h"
 #include "render.h"
+#include "cairo_jpg.h"
 
 static void screencopy_frame_handle_buffer(void *data,
 		struct zwlr_screencopy_frame_v1 *frame, uint32_t format, uint32_t width,
@@ -193,6 +194,8 @@ static const char usage[] =
 	"  -s <factor>     Set the output image scale factor. Defaults to the\n"
 	"                  greatest output scale factor.\n"
 	"  -g <geometry>   Set the region to capture.\n"
+	"  -t <type>       Set the output filetype.\n"
+	"  -q <quality>    Set the jpeg filetype quality 0-100. Defaults to 80.\n"
 	"  -o <output>     Set the output name to capture.\n";
 
 int main(int argc, char *argv[]) {
@@ -200,8 +203,10 @@ int main(int argc, char *argv[]) {
 	bool use_greatest_scale = true;
 	struct grim_box *geometry = NULL;
 	char *geometry_output = NULL;
+	char *output_filetype = "png";
+	int jpeg_quality = 80;
 	int opt;
-	while ((opt = getopt(argc, argv, "hs:g:o:")) != -1) {
+	while ((opt = getopt(argc, argv, "hs:g:t:q:o:")) != -1) {
 		switch (opt) {
 		case 'h':
 			printf("%s", usage);
@@ -236,6 +241,29 @@ int main(int argc, char *argv[]) {
 			}
 
 			free(geometry_str);
+			break;
+		case 't':
+			if (strcmp(optarg, "jpeg") == 0) {
+				output_filetype = strdup(optarg);
+			} else if (strcmp(optarg, "png") != 0) {
+				fprintf(stderr, "invalid filetype [png/jpeg]\n");
+				return EXIT_FAILURE;
+			}
+			break;
+		case 'q':
+			if (strcmp(output_filetype, "jpeg") != 0) {
+				fprintf(stderr, "quality is used only for jpeg filetype\n");
+				return EXIT_FAILURE;
+			} else {
+				if (sscanf(optarg, "%i", &jpeg_quality) != 1) {
+					fprintf(stderr, "quality must be a integer\n");
+					return EXIT_FAILURE;
+				}
+				if (jpeg_quality < 0 || jpeg_quality > 100) {
+					fprintf(stderr, "quality valid values are between 0-100\n");
+					return EXIT_FAILURE;
+				}
+			}
 			break;
 		case 'o':
 			free(geometry_output);
@@ -363,9 +391,19 @@ int main(int argc, char *argv[]) {
 
 	cairo_status_t status;
 	if (strcmp(output_filename, "-") == 0) {
-		status = cairo_surface_write_to_png_stream(surface, write_func, stdout);
+		if (strcmp(output_filetype, "png") == 0) {
+			status = cairo_surface_write_to_png_stream(surface, write_func, stdout);
+		} else {
+			status = cairo_image_surface_write_to_jpeg_stream(
+				surface, write_func, stdout, jpeg_quality);
+		}
 	} else {
-		status = cairo_surface_write_to_png(surface, output_filename);
+		if (strcmp(output_filetype, "png") == 0) {
+			status = cairo_surface_write_to_png(surface, output_filename);
+		} else {
+			status = cairo_image_surface_write_to_jpeg(
+				surface, output_filename, jpeg_quality);
+		}
 	}
 	if (status != CAIRO_STATUS_SUCCESS) {
 		fprintf(stderr, "failed to write output file\n");
