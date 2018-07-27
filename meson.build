@@ -29,6 +29,7 @@ executable(
 	files([
 		'box.c',
 		'buffer.c',
+		'cairo_jpg.c',
 		'main.c',
 		'output-layout.c',
 		'render.c',
