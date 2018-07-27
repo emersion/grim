@@ -255,7 +255,9 @@ int main(int argc, char *argv[]) {
 				fprintf(stderr, "quality is used only for jpeg filetype\n");
 				return EXIT_FAILURE;
 			} else {
-				if (sscanf(optarg, "%i", &jpeg_quality) != 1) {
+				char *endptr = NULL;
+				jpeg_quality = strtol(optarg, &endptr, 10);
+				if (*endptr != '\0') {
 					fprintf(stderr, "quality must be a integer\n");
 					return EXIT_FAILURE;
 				}
