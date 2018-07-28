@@ -1,3 +1,8 @@
+/**
+ * @author Bernhard R. Fischer, 4096R/8E24F29D bf@abenteuerland.at
+ * @license This code is free software. Do whatever you like to do with it.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
