@@ -19,6 +19,7 @@ cc = meson.get_compiler('c')
 cairo = dependency('cairo')
 wayland_client = dependency('wayland-client')
 wayland_protos = dependency('wayland-protocols', version: '>=1.14')
+jpeg = dependency('libjpeg')
 math = cc.find_library('m')
 
 subdir('protocol')
@@ -28,6 +29,7 @@ executable(
 	files([
 		'box.c',
 		'buffer.c',
+		'cairo_jpg.c',
 		'main.c',
 		'output-layout.c',
 		'render.c',
@@ -35,6 +37,7 @@ executable(
 	dependencies: [
 		cairo,
 		client_protos,
+		jpeg,
 		math,
 		wayland_client,
 	],

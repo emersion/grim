@@ -4,6 +4,7 @@ packages:
   - wayland
   - wayland-protocols
   - cairo
+  - libjpeg-turbo
 sources:
   - https://github.com/emerison/grim
 tasks:
