@@ -30,6 +30,13 @@ slurp | grim -g - screenshot.png # Select a region and screenshoot it
 grim $(xdg-user-dir PICTURES)/$(date +'%Y-%m-%d-%H%M%S_grim.png') # Use a timestamped filename
 ```
 
+## Contributing
+
+Either [send GitHub pull requests][1] or [send patches on the mailing list][2].
+
 ## License
 
 MIT
+
+[1]: https://github.com/emersion/grim
+[2]: https://lists.sr.ht/%7Eemersion/public-inbox
