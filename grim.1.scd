@@ -42,6 +42,9 @@ output the file to the standard output instead.
 *-o* <output>
 	Set the output name to capture.
 
+*-c*
+	Include cursors in the screenshot.
+
 # AUTHORS
 
 Maintained by Simon Ser <contact@emersion.fr>, who is assisted by other

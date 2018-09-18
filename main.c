@@ -196,7 +196,8 @@ static const char usage[] =
 	"  -g <geometry>   Set the region to capture.\n"
 	"  -t <type>       Set the output filetype. Defaults to png, [png|jpeg].\n"
 	"  -q <quality>    Set the jpeg filetype quality 0-100. Defaults to 80.\n"
-	"  -o <output>     Set the output name to capture.\n";
+	"  -o <output>     Set the output name to capture.\n"
+	"  -c              Include cursors in the screenshot.\n";
 
 int main(int argc, char *argv[]) {
 	double scale = 1.0;
@@ -205,8 +206,9 @@ int main(int argc, char *argv[]) {
 	char *geometry_output = NULL;
 	char *output_filetype = "png";
 	int jpeg_quality = 80;
+	bool with_cursor = false;
 	int opt;
-	while ((opt = getopt(argc, argv, "hs:g:t:q:o:")) != -1) {
+	while ((opt = getopt(argc, argv, "hs:g:t:q:o:c")) != -1) {
 		switch (opt) {
 		case 'h':
 			printf("%s", usage);
@@ -270,6 +272,9 @@ int main(int argc, char *argv[]) {
 		case 'o':
 			free(geometry_output);
 			geometry_output = strdup(optarg);
+			break;
+		case 'c':
+			with_cursor = true;
 			break;
 		default:
 			return EXIT_FAILURE;
@@ -360,7 +365,7 @@ int main(int argc, char *argv[]) {
 		}
 
 		output->screencopy_frame = zwlr_screencopy_manager_v1_capture_output(
-			state.screencopy_manager, 1, output->wl_output);
+			state.screencopy_manager, with_cursor, output->wl_output);
 		zwlr_screencopy_frame_v1_add_listener(output->screencopy_frame,
 			&screencopy_frame_listener, output);
 
