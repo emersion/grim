@@ -47,6 +47,7 @@ struct grim_buffer *create_buffer(struct wl_shm *shm, enum wl_shm_format wl_fmt,
 
 	void *data = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 	if (data == MAP_FAILED) {
+		free(name);
 		return NULL;
 	}
 
