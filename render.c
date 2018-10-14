@@ -1,8 +1,21 @@
+#include <assert.h>
 #include <stdio.h>
 
 #include "buffer.h"
 #include "output-layout.h"
 #include "render.h"
+
+static cairo_format_t get_cairo_format(enum wl_shm_format wl_fmt) {
+	switch (wl_fmt) {
+	case WL_SHM_FORMAT_ARGB8888:
+		return CAIRO_FORMAT_ARGB32;
+	case WL_SHM_FORMAT_XRGB8888:
+		return CAIRO_FORMAT_RGB24;
+	default:
+		return CAIRO_FORMAT_INVALID;
+	}
+	assert(false);
+}
 
 cairo_surface_t *render(struct grim_state *state, struct grim_box *geometry,
 		double scale) {
@@ -23,8 +36,10 @@ cairo_surface_t *render(struct grim_state *state, struct grim_box *geometry,
 		if (buffer == NULL) {
 			continue;
 		}
-		if (buffer->format != WL_SHM_FORMAT_ARGB8888) {
-			fprintf(stderr, "unsupported format\n");
+
+		cairo_format_t cairo_fmt = get_cairo_format(buffer->format);
+		if (cairo_fmt == CAIRO_FORMAT_INVALID) {
+			fprintf(stderr, "unsupported format %d\n", buffer->format);
 			return NULL;
 		}
 
@@ -43,7 +58,7 @@ cairo_surface_t *render(struct grim_state *state, struct grim_box *geometry,
 			ZWLR_SCREENCOPY_FRAME_V1_FLAGS_Y_INVERT ? -1 : 1;
 
 		cairo_surface_t *output_surface = cairo_image_surface_create_for_data(
-			buffer->data, CAIRO_FORMAT_ARGB32, buffer->width, buffer->height,
+			buffer->data, cairo_fmt, buffer->width, buffer->height,
 			buffer->stride);
 		cairo_pattern_t *output_pattern =
 			cairo_pattern_create_for_surface(output_surface);

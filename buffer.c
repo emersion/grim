@@ -35,7 +35,7 @@ static int create_pool_file(size_t size, char **name) {
 	return fd;
 }
 
-struct grim_buffer *create_buffer(struct wl_shm *shm, enum wl_shm_format wl_fmt,
+struct grim_buffer *create_buffer(struct wl_shm *shm, enum wl_shm_format format,
 		int32_t width, int32_t height, int32_t stride) {
 	size_t size = stride * height;
 
@@ -47,13 +47,14 @@ struct grim_buffer *create_buffer(struct wl_shm *shm, enum wl_shm_format wl_fmt,
 
 	void *data = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 	if (data == MAP_FAILED) {
+		unlink(name);
 		free(name);
 		return NULL;
 	}
 
 	struct wl_shm_pool *pool = wl_shm_create_pool(shm, fd, size);
 	struct wl_buffer *wl_buffer =
-		wl_shm_pool_create_buffer(pool, 0, width, height, stride, wl_fmt);
+		wl_shm_pool_create_buffer(pool, 0, width, height, stride, format);
 	wl_shm_pool_destroy(pool);
 
 	close(fd);
@@ -68,6 +69,7 @@ struct grim_buffer *create_buffer(struct wl_shm *shm, enum wl_shm_format wl_fmt,
 	buffer->height = height;
 	buffer->stride = stride;
 	buffer->size = size;
+	buffer->format = format;
 	return buffer;
 }
 
