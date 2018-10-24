@@ -3,7 +3,7 @@
 Grab images from a Wayland compositor. Works well with
 [slurp](https://github.com/emersion/slurp).
 
-It currently works on Sway 1.0 alpha.
+It currently works on Sway 1.0.
 
 ## Building
 
