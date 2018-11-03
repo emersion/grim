@@ -7,7 +7,9 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <assert.h>
 #include <fcntl.h>
+#include <limits.h>
 #include <unistd.h>
 #include <cairo.h>
 #include <jpeglib.h>
@@ -15,7 +17,7 @@
 #include "cairo_jpg.h"
 
 cairo_status_t cairo_surface_write_to_jpeg_mem(cairo_surface_t *sfc,
-		unsigned char **data, size_t *len, int quality) {
+		unsigned char **data, unsigned long *len, int quality) {
 	struct jpeg_compress_struct cinfo;
 	struct jpeg_error_mgr jerr;
 	JSAMPROW row_pointer[1];
@@ -91,18 +93,17 @@ cairo_status_t cairo_surface_write_to_jpeg_stream(cairo_surface_t *sfc,
 		cairo_write_func_t write_func, void *closure, int quality) {
 	cairo_status_t e;
 	unsigned char *data = NULL;
-	size_t len = 0;
+	unsigned long len = 0;
 
 	e = cairo_surface_write_to_jpeg_mem(sfc, &data, &len, quality);
-	if (e != CAIRO_STATUS_SUCCESS) {
-		return e;
+	if (e == CAIRO_STATUS_SUCCESS) {
+		assert(sizeof(unsigned long) <= sizeof(size_t)
+			|| !(len >> (sizeof(size_t) * CHAR_BIT)));
+		e = write_func(closure, data, len);
+		free(data);
 	}
 
-	e = write_func(closure, data, len);
-
-	free(data);
 	return e;
-
 }
 
 cairo_status_t cairo_surface_write_to_jpeg(cairo_surface_t *sfc,
