@@ -25,7 +25,7 @@ grim -o DP-1 screenshot.png # Screenshoot a specific output
 grim -g "10,20 300x400" screenshot.png # Screenshoot a region
 slurp | grim -g - screenshot.png # Select a region and screenshoot it
 grim $(xdg-user-dir PICTURES)/$(date +'%Y-%m-%d-%H%M%S_grim.png') # Use a timestamped filename
-grim -o $(swaymsg -t get_outputs | grep name | cut -d'"' -f4 | head -1) /tmp/screenshot.png # Grab from a specific monitor, using swaymsg
+grim -o $(swaymsg -t get_outputs | jq -r '.[] | select(.focused==true) | .name') /tmp/screenshot.png # Grab a screenshot from the focused monitor
 ```
 
 ## Installation
