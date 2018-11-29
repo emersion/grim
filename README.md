@@ -11,22 +11,37 @@ Install dependencies:
 
 Then run:
 
-```shell
+```sh
 meson build
 ninja -C build
 build/grim
 ```
 
-## Usage
+## Example Usage
 
-```shell
-grim screenshot.png # Screenshoot all outputs
-grim -o DP-1 screenshot.png # Screenshoot a specific output
-grim -g "10,20 300x400" screenshot.png # Screenshoot a region
-slurp | grim -g - screenshot.png # Select a region and screenshoot it
-grim $(xdg-user-dir PICTURES)/$(date +'%Y-%m-%d-%H%M%S_grim.png') # Use a timestamped filename
-grim -o $(swaymsg -t get_outputs | jq -r '.[] | select(.focused==true) | .name') /tmp/screenshot.png # Grab a screenshot from the focused monitor
-```
+Screenshoot all outputs:
+
+    grim screenshot.png
+
+Screenshoot a specific output:
+
+    grim -o DP-1 screenshot.png
+
+Screenshoot a region:
+
+    grim -g "10,20 300x400" screenshot.png
+
+Select a region and screenshoot it:
+
+    slurp | grim -g - screenshot.png
+
+Use a timestamped filename:
+
+    grim $(xdg-user-dir PICTURES)/$(date +'%Y-%m-%d-%H%M%S_grim.png')
+
+Grab a screenshot from the focused monitor under Sway, using `swaymsg` and `jq`:
+
+    grim -o $(swaymsg -t get_outputs | jq -r '.[] | select(.focused) | .name') screenshot.png
 
 ## Installation
 
