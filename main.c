@@ -413,10 +413,12 @@ int main(int argc, char *argv[]) {
 		switch (output_filetype) {
 		case GRIM_FILETYPE_PNG:
 			status = cairo_surface_write_to_png_stream(surface, write_func, stdout);
+			break;
 		case GRIM_FILETYPE_JPEG:
 #if HAVE_JPEG
 			status = cairo_surface_write_to_jpeg_stream(surface, write_func,
 				stdout, jpeg_quality);
+			break;
 #else
 			assert(false);
 #endif
@@ -425,10 +427,12 @@ int main(int argc, char *argv[]) {
 		switch (output_filetype) {
 		case GRIM_FILETYPE_PNG:
 			status = cairo_surface_write_to_png(surface, output_filename);
+			break;
 		case GRIM_FILETYPE_JPEG:
 #if HAVE_JPEG
 			status = cairo_surface_write_to_jpeg(
 				surface, output_filename, jpeg_quality);
+			break;
 #else
 			assert(false);
 #endif
