@@ -1,0 +1,7 @@
+option(
+	'jpeg',
+	type: 'combo',
+	choices: ['auto', 'enabled', 'disabled'],
+	value: 'auto',
+	description: 'Enable JPEG support',
+)
