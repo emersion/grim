@@ -7,6 +7,11 @@
 #include "wlr-screencopy-unstable-v1-client-protocol.h"
 #include "xdg-output-unstable-v1-client-protocol.h"
 
+enum grim_filetype {
+	GRIM_FILETYPE_PNG,
+	GRIM_FILETYPE_JPEG,
+};
+
 struct grim_state {
 	struct wl_display *display;
 	struct wl_registry *registry;

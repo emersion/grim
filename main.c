@@ -1,5 +1,7 @@
 #define _POSIX_C_SOURCE 200809L
+#include <assert.h>
 #include <cairo.h>
+#include <errno.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,7 +12,9 @@
 #include "grim.h"
 #include "output-layout.h"
 #include "render.h"
+#ifdef HAVE_JPEG
 #include "cairo_jpg.h"
+#endif
 
 static void screencopy_frame_handle_buffer(void *data,
 		struct zwlr_screencopy_frame_v1 *frame, uint32_t format, uint32_t width,
@@ -194,8 +198,8 @@ static const char usage[] =
 	"  -s <factor>     Set the output image scale factor. Defaults to the\n"
 	"                  greatest output scale factor.\n"
 	"  -g <geometry>   Set the region to capture.\n"
-	"  -t <type>       Set the output filetype. Defaults to png, [png|jpeg].\n"
-	"  -q <quality>    Set the jpeg filetype quality 0-100. Defaults to 80.\n"
+	"  -t png|jpeg     Set the output filetype. Defaults to png.\n"
+	"  -q <quality>    Set the JPEG filetype quality 0-100. Defaults to 80.\n"
 	"  -o <output>     Set the output name to capture.\n"
 	"  -c              Include cursors in the screenshot.\n";
 
@@ -204,7 +208,7 @@ int main(int argc, char *argv[]) {
 	bool use_greatest_scale = true;
 	struct grim_box *geometry = NULL;
 	char *geometry_output = NULL;
-	char *output_filetype = "png";
+	enum grim_filetype output_filetype = GRIM_FILETYPE_PNG;
 	int jpeg_quality = 80;
 	bool with_cursor = false;
 	int opt;
@@ -245,21 +249,29 @@ int main(int argc, char *argv[]) {
 			free(geometry_str);
 			break;
 		case 't':
-			if (strcmp(optarg, "jpeg") == 0) {
-				output_filetype = strdup(optarg);
-			} else if (strcmp(optarg, "png") != 0) {
-				fprintf(stderr, "invalid filetype [png/jpeg]\n");
+			if (strcmp(optarg, "png") == 0) {
+				output_filetype = GRIM_FILETYPE_PNG;
+			} else if (strcmp(optarg, "jpeg") == 0) {
+#ifdef HAVE_JPEG
+				output_filetype = GRIM_FILETYPE_JPEG;
+#else
+				fprintf(stderr, "jpeg support disabled\n");
+				return EXIT_FAILURE;
+#endif
+			} else {
+				fprintf(stderr, "invalid filetype\n");
 				return EXIT_FAILURE;
 			}
 			break;
 		case 'q':
-			if (strcmp(output_filetype, "jpeg") != 0) {
-				fprintf(stderr, "quality is used only for jpeg filetype\n");
+			if (output_filetype != GRIM_FILETYPE_JPEG) {
+				fprintf(stderr, "quality is used only for jpeg files\n");
 				return EXIT_FAILURE;
 			} else {
 				char *endptr = NULL;
+				errno = 0;
 				jpeg_quality = strtol(optarg, &endptr, 10);
-				if (*endptr != '\0') {
+				if (*endptr != '\0' || errno) {
 					fprintf(stderr, "quality must be a integer\n");
 					return EXIT_FAILURE;
 				}
@@ -398,18 +410,28 @@ int main(int argc, char *argv[]) {
 
 	cairo_status_t status;
 	if (strcmp(output_filename, "-") == 0) {
-		if (strcmp(output_filetype, "png") == 0) {
+		switch (output_filetype) {
+		case GRIM_FILETYPE_PNG:
 			status = cairo_surface_write_to_png_stream(surface, write_func, stdout);
-		} else {
-			status = cairo_surface_write_to_jpeg_stream(
-				surface, write_func, stdout, jpeg_quality);
+		case GRIM_FILETYPE_JPEG:
+#if HAVE_JPEG
+			status = cairo_surface_write_to_jpeg_stream(surface, write_func,
+				stdout, jpeg_quality);
+#else
+			assert(false);
+#endif
 		}
 	} else {
-		if (strcmp(output_filetype, "png") == 0) {
+		switch (output_filetype) {
+		case GRIM_FILETYPE_PNG:
 			status = cairo_surface_write_to_png(surface, output_filename);
-		} else {
+		case GRIM_FILETYPE_JPEG:
+#if HAVE_JPEG
 			status = cairo_surface_write_to_jpeg(
 				surface, output_filename, jpeg_quality);
+#else
+			assert(false);
+#endif
 		}
 	}
 	if (status != CAIRO_STATUS_SUCCESS) {

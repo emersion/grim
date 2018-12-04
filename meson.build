@@ -18,32 +18,44 @@ grim_inc = include_directories('include')
 cc = meson.get_compiler('c')
 
 cairo = dependency('cairo')
-jpeg = dependency('libjpeg')
+jpeg = dependency('libjpeg', required: get_option('jpeg') == 'enabled')
 math = cc.find_library('m')
 realtime = cc.find_library('rt')
 wayland_client = dependency('wayland-client')
 wayland_protos = dependency('wayland-protocols', version: '>=1.14')
 
+have_jpeg = get_option('jpeg') != 'disabled' and jpeg.found()
+if have_jpeg
+	add_project_arguments('-DHAVE_JPEG', language: 'c')
+endif
+
 subdir('protocol')
+
+grim_files = [
+	'box.c',
+	'buffer.c',
+	'main.c',
+	'output-layout.c',
+	'render.c',
+]
+
+grim_deps = [
+	cairo,
+	client_protos,
+	math,
+	realtime,
+	wayland_client,
+]
+
+if have_jpeg
+	grim_files += ['cairo_jpg.c']
+	grim_deps += [jpeg]
+endif
 
 executable(
 	'grim',
-	files([
-		'box.c',
-		'buffer.c',
-		'cairo_jpg.c',
-		'main.c',
-		'output-layout.c',
-		'render.c',
-	]),
-	dependencies: [
-		cairo,
-		client_protos,
-		jpeg,
-		math,
-		realtime,
-		wayland_client,
-	],
+	files(grim_files),
+	dependencies: grim_deps,
 	include_directories: [grim_inc],
 	install: true,
 )
