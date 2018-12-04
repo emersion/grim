@@ -1,13 +1,57 @@
 # grim
 
-Grab images from a Wayland compositor. Works great with [slurp](https://github.com/emersion/slurp) and also with [sway](https://github.com/swaywm/sway/) >= 1.0.
+Grab images from a Wayland compositor. Works great with [slurp] and with [sway] >= 1.0.
+
+## Example usage
+
+Screenshoot all outputs:
+
+```sh
+grim screenshot.png
+```
+
+Screenshoot a specific output:
+
+```sh
+grim -o DP-1 screenshot.png
+```
+
+Screenshoot a region:
+
+```sh
+grim -g "10,20 300x400" screenshot.png
+```
+
+Select a region and screenshoot it:
+
+```sh
+slurp | grim -g - screenshot.png
+```
+
+Use a timestamped filename:
+
+```sh
+grim $(xdg-user-dir PICTURES)/$(date +'%Y-%m-%d-%H%M%S_grim.png')
+```
+
+Grab a screenshot from the focused monitor under Sway, using `swaymsg` and `jq`:
+
+```sh
+grim -o $(swaymsg -t get_outputs | jq -r '.[] | select(.focused) | .name') screenshot.png
+```
+
+## Installation
+
+* Arch Linux: `pacman -S grim`
 
 ## Building
 
 Install dependencies:
+
 * meson
 * wayland
 * cairo
+* libjpeg (optional)
 
 Then run:
 
@@ -17,45 +61,15 @@ ninja -C build
 build/grim
 ```
 
-## Example Usage
-
-Screenshoot all outputs:
-
-    grim screenshot.png
-
-Screenshoot a specific output:
-
-    grim -o DP-1 screenshot.png
-
-Screenshoot a region:
-
-    grim -g "10,20 300x400" screenshot.png
-
-Select a region and screenshoot it:
-
-    slurp | grim -g - screenshot.png
-
-Use a timestamped filename:
-
-    grim $(xdg-user-dir PICTURES)/$(date +'%Y-%m-%d-%H%M%S_grim.png')
-
-Grab a screenshot from the focused monitor under Sway, using `swaymsg` and `jq`:
-
-    grim -o $(swaymsg -t get_outputs | jq -r '.[] | select(.focused) | .name') screenshot.png
-
-## Installation
-
-### Arch Linux
-
-    pacman -S grim
-
 ## Contributing
 
-Either [send GitHub pull requests][1] or [send patches on the mailing list][2].
+Either [send GitHub pull requests][github] or [send patches on the mailing list][ml].
 
 ## License
 
 MIT
 
-[1]: https://github.com/emersion/grim
-[2]: https://lists.sr.ht/%7Eemersion/public-inbox
+[slurp]: https://github.com/emersion/slurp
+[sway]: https://github.com/swaywm/sway
+[github]: https://github.com/emersion/grim
+[ml]: https://lists.sr.ht/%7Eemersion/public-inbox
