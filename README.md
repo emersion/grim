@@ -25,7 +25,7 @@ grim -g "10,20 300x400" screenshot.png
 Select a region and screenshoot it:
 
 ```sh
-grim -g $(slurp) screenshot.png
+grim -g "$(slurp)" screenshot.png
 ```
 
 Use a timestamped filename:
