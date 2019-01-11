@@ -34,6 +34,12 @@ Use a timestamped filename:
 grim $(xdg-user-dir PICTURES)/$(date +'%Y-%m-%d-%H%M%S_grim.png')
 ```
 
+Screenshoot and copy to clipboard:
+
+```sh
+grim - | wl-copy
+```
+
 Grab a screenshot from the focused monitor under Sway, using `swaymsg` and `jq`:
 
 ```sh
