@@ -40,6 +40,12 @@ Screenshoot and copy to clipboard:
 grim - | wl-copy
 ```
 
+Screenshoot, save to file, and copy to clipboard:
+
+```sh
+grim - | tee ~/Pictures/$(date +'%Y-%m-%d-%H%M%S_grim.png') | wl-copy
+``` 
+
 Grab a screenshot from the focused monitor under Sway, using `swaymsg` and `jq`:
 
 ```sh
