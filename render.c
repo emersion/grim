@@ -5,6 +5,40 @@
 #include "output-layout.h"
 #include "render.h"
 
+static bool convert_buffer(struct grim_buffer *buffer) {
+	// Formats are little-endian
+	switch (buffer->format) {
+	case WL_SHM_FORMAT_ARGB8888:
+	case WL_SHM_FORMAT_XRGB8888:
+		// Natively supported by Cairo
+		return true;
+	case WL_SHM_FORMAT_ABGR8888:
+	case WL_SHM_FORMAT_XBGR8888:;
+		// ABGR -> ARGB
+		uint8_t *data = buffer->data;
+		for (int i = 0; i < buffer->height; ++i) {
+			for (int j = 0; j < buffer->width; ++j) {
+				uint32_t *px = (uint32_t *)(data + i * buffer->stride + j * 4);
+				uint8_t a = (*px >> 24) & 0xFF;
+				uint8_t b = (*px >> 16) & 0xFF;
+				uint8_t g = (*px >> 8) & 0xFF;
+				uint8_t r = *px & 0xFF;
+				*px = (a << 24) | (r << 16) | (g << 8) | b;
+			}
+		}
+		if (buffer->format == WL_SHM_FORMAT_ABGR8888) {
+			buffer->format = WL_SHM_FORMAT_ARGB8888;
+		} else {
+			buffer->format = WL_SHM_FORMAT_XRGB8888;
+		}
+		return true;
+	default:
+		fprintf(stderr, "unsupported format %d\n", buffer->format);
+		return false;
+	}
+	assert(false);
+}
+
 static cairo_format_t get_cairo_format(enum wl_shm_format wl_fmt) {
 	switch (wl_fmt) {
 	case WL_SHM_FORMAT_ARGB8888:
@@ -37,11 +71,12 @@ cairo_surface_t *render(struct grim_state *state, struct grim_box *geometry,
 			continue;
 		}
 
-		cairo_format_t cairo_fmt = get_cairo_format(buffer->format);
-		if (cairo_fmt == CAIRO_FORMAT_INVALID) {
-			fprintf(stderr, "unsupported format %d\n", buffer->format);
+		if (!convert_buffer(buffer)) {
 			return NULL;
 		}
+
+		cairo_format_t cairo_fmt = get_cairo_format(buffer->format);
+		assert(cairo_fmt != CAIRO_FORMAT_INVALID);
 
 		int32_t output_x = output->logical_geometry.x - geometry->x;
 		int32_t output_y = output->logical_geometry.y - geometry->y;
