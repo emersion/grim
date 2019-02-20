@@ -1,7 +1,2 @@
-option(
-	'jpeg',
-	type: 'combo',
-	choices: ['auto', 'enabled', 'disabled'],
-	value: 'auto',
-	description: 'Enable JPEG support',
-)
+option('jpeg', type: 'feature', value: 'auto', description: 'Enable JPEG support')
+option('man-pages', type: 'feature', value: 'auto', description: 'Generate and install man pages')
