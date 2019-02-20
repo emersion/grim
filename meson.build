@@ -3,7 +3,7 @@ project(
 	'c',
 	version: '1.1.0',
 	license: 'MIT',
-	meson_version: '>=0.43.0',
+	meson_version: '>=0.48.0',
 	default_options: [
 		'c_std=c11',
 		'warning_level=2',
@@ -18,14 +18,13 @@ grim_inc = include_directories('include')
 cc = meson.get_compiler('c')
 
 cairo = dependency('cairo')
-jpeg = dependency('libjpeg', required: get_option('jpeg') == 'enabled')
+jpeg = dependency('libjpeg', required: get_option('jpeg'))
 math = cc.find_library('m')
 realtime = cc.find_library('rt')
 wayland_client = dependency('wayland-client')
 wayland_protos = dependency('wayland-protocols', version: '>=1.14')
 
-have_jpeg = get_option('jpeg') != 'disabled' and jpeg.found()
-if have_jpeg
+if jpeg.found()
 	add_project_arguments('-DHAVE_JPEG', language: 'c')
 endif
 
@@ -47,7 +46,7 @@ grim_deps = [
 	wayland_client,
 ]
 
-if have_jpeg
+if jpeg.found()
 	grim_files += ['cairo_jpg.c']
 	grim_deps += [jpeg]
 endif
@@ -60,7 +59,7 @@ executable(
 	install: true,
 )
 
-scdoc = find_program('scdoc', required: false)
+scdoc = find_program('scdoc', required: get_option('man-pages'))
 
 if scdoc.found()
 	sh = find_program('sh')
