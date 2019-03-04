@@ -46,6 +46,12 @@ Grab a screenshot from the focused monitor under Sway, using `swaymsg` and `jq`:
 grim -o $(swaymsg -t get_outputs | jq -r '.[] | select(.focused) | .name') screenshot.png
 ```
 
+Record the focused window to a GIF file for 20 seconds, at 9 FPS, using [`grimrec`](https://github.com/xyproto/grimrec), `swaymsg`, `grim` and `notify-send`:
+
+```sh
+grimrec /tmp/output.gif 20 9 && notify-send 'Recording completed'
+```
+
 ## Installation
 
 * Arch Linux: `pacman -S grim`
