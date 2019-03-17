@@ -222,7 +222,7 @@ void default_filename(char *filename, size_t n, int filetype) {
 }
 
 static const char usage[] =
-	"Usage: grim [options...] <output-file>\n"
+	"Usage: grim [options...] [output-file]\n"
 	"\n"
 	"  -h              Show help message and quit.\n"
 	"  -s <factor>     Set the output image scale factor. Defaults to the\n"
