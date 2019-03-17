@@ -7,31 +7,31 @@ Grab images from a Wayland compositor. Works great with [slurp] and with [sway] 
 Screenshoot all outputs:
 
 ```sh
-grim screenshot.png
+grim
 ```
 
 Screenshoot a specific output:
 
 ```sh
-grim -o DP-1 screenshot.png
+grim -o DP-1
 ```
 
 Screenshoot a region:
 
 ```sh
-grim -g "10,20 300x400" screenshot.png
+grim -g "10,20 300x400"
 ```
 
 Select a region and screenshoot it:
 
 ```sh
-grim -g "$(slurp)" screenshot.png
+grim -g "$(slurp)"
 ```
 
-Use a timestamped filename:
+Use a custom filename:
 
 ```sh
-grim $(xdg-user-dir PICTURES)/$(date +'%Y-%m-%d-%H%M%S_grim.png')
+grim $(xdg-user-dir PICTURES)/$(date +'%s_grim.png')
 ```
 
 Screenshoot and copy to clipboard:
@@ -43,7 +43,7 @@ grim - | wl-copy
 Grab a screenshot from the focused monitor under Sway, using `swaymsg` and `jq`:
 
 ```sh
-grim -o $(swaymsg -t get_outputs | jq -r '.[] | select(.focused) | .name') screenshot.png
+grim -o $(swaymsg -t get_outputs | jq -r '.[] | select(.focused) | .name')
 ```
 
 ## Installation
