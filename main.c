@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <unistd.h>
 
 #include "buffer.h"
@@ -191,6 +192,34 @@ static cairo_status_t write_func(void *data, const unsigned char *buf,
 	return CAIRO_STATUS_SUCCESS;
 }
 
+void default_filename(char *filename, size_t n, int filetype) {
+	time_t time_epoch = time(NULL);
+	struct tm *time = gmtime(&time_epoch);
+	if (time == NULL) {
+		perror("gmtime");
+		exit(EXIT_FAILURE);
+	}
+
+	char *format_str;
+	switch (filetype) {
+	case GRIM_FILETYPE_PNG:
+		format_str = "%Y-%m-%dT%H:%M:%SZ_grim.png";
+		break;
+	case GRIM_FILETYPE_JPEG:
+#if HAVE_JPEG
+		format_str = "%Y-%m-%dT%H:%M:%SZ_grim.jpeg";
+		break;
+#else
+		assert(false);
+#endif
+	}
+
+	if (strftime(filename, n, format_str, time) == 0) {
+		fprintf(stderr, "failed to format datetime with strftime(3)\n");
+		exit(EXIT_FAILURE);
+	}
+}
+
 static const char usage[] =
 	"Usage: grim [options...] <output-file>\n"
 	"\n"
@@ -293,11 +322,14 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
+	char *output_filename;
+	char tmp[64];
 	if (optind >= argc) {
-		fprintf(stderr, "%s", usage);
-		return EXIT_FAILURE;
+		default_filename(tmp, sizeof(tmp), output_filetype);
+		output_filename = tmp;
+	} else {
+		output_filename = argv[optind];
 	}
-	char *output_filename = argv[optind];
 
 	struct grim_state state = {0};
 	wl_list_init(&state.outputs);
