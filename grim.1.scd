@@ -6,7 +6,7 @@ grim - grab images from a Wayland compositor
 
 # DESCRIPTION
 
-*grim* [options...] <output-file>
+*grim* [options...] [output-file]
 
 # SYNOPSIS
 
@@ -14,8 +14,9 @@ grim is a command-line utility to take screenshots of Wayland desktops. For now
 it requires support for the screencopy protocol to work. Support for the
 xdg-output protocol is optional, but improves fractional scaling support.
 
-grim will write a PNG file to _output-file_. If _output-file_ is *-*, it will
-output the file to the standard output instead.
+grim will write a PNG file to _output-file_, or to a default file name if not
+_output-file_ is not specified. If _output-file_ is *-*, it will output the file
+to the standard output instead.
 
 # OPTIONS
 
