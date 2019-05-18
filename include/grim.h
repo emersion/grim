@@ -9,6 +9,7 @@
 
 enum grim_filetype {
 	GRIM_FILETYPE_PNG,
+	GRIM_FILETYPE_PPM,
 	GRIM_FILETYPE_JPEG,
 };
 
