@@ -36,6 +36,7 @@ grim_files = [
 	'main.c',
 	'output-layout.c',
 	'render.c',
+	'cairo_ppm.c',
 ]
 
 grim_deps = [
