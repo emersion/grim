@@ -2,6 +2,28 @@
 
 Grab images from a Wayland compositor. Works great with [slurp] and with [sway] >= 1.0.
 
+## Package manager installation
+
+* Arch Linux: `pacman -S grim`
+
+## Building from source
+
+Install dependencies:
+
+* meson
+* wayland
+* cairo
+* libjpeg (optional)
+
+Then run:
+
+```sh
+meson build
+ninja -C build
+```
+
+To run directly, use `build/grim`, or if you would like to do a system installation (in `/usr/local` by default), run `ninja -C build install`. 
+
 ## Example usage
 
 Screenshoot all outputs:
@@ -44,27 +66,6 @@ Grab a screenshot from the focused monitor under Sway, using `swaymsg` and `jq`:
 
 ```sh
 grim -o $(swaymsg -t get_outputs | jq -r '.[] | select(.focused) | .name') screenshot.png
-```
-
-## Installation
-
-* Arch Linux: `pacman -S grim`
-
-## Building
-
-Install dependencies:
-
-* meson
-* wayland
-* cairo
-* libjpeg (optional)
-
-Then run:
-
-```sh
-meson build
-ninja -C build
-build/grim
 ```
 
 ## Contributing
