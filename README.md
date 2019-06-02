@@ -46,11 +46,11 @@ Grab a screenshot from the focused monitor under Sway, using `swaymsg` and `jq`:
 grim -o $(swaymsg -t get_outputs | jq -r '.[] | select(.focused) | .name') screenshot.png
 ```
 
-## Installation
+## Package manager installation
 
 * Arch Linux: `pacman -S grim`
 
-## Building
+## Building from source
 
 Install dependencies:
 
@@ -64,8 +64,9 @@ Then run:
 ```sh
 meson build
 ninja -C build
-build/grim
 ```
+
+To run directly, use `build/grim`, or if you would like to do a system installation (in `/usr/local` by default), run `ninja -C build install`. 
 
 ## Contributing
 
