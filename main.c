@@ -415,7 +415,7 @@ int main(int argc, char *argv[]) {
 	if (strcmp(output_filename, "-") == 0) {
 		switch (output_filetype) {
 		case GRIM_FILETYPE_PPM:
-			status = cairo_surface_write_to_png_stream(surface, write_func, stdout);
+			status = cairo_surface_write_to_ppm_stream(surface, write_func, stdout);
 			break;
 		case GRIM_FILETYPE_PNG:
 			status = cairo_surface_write_to_png_stream(surface, write_func, stdout);
