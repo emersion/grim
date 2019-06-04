@@ -1,6 +1,7 @@
 # grim
 
-Grab images from a Wayland compositor. Works great with [slurp] and with [sway] >= 1.0.
+Grab images from a Wayland compositor. Works great with [slurp] and with
+[sway] >= 1.0.
 
 ## Example usage
 
@@ -40,10 +41,17 @@ Screenshoot and copy to clipboard:
 grim - | wl-copy
 ```
 
-Grab a screenshot from the focused monitor under Sway, using `swaymsg` and `jq`:
+Grab a screenshot from the focused monitor under Sway, using `swaymsg` and
+`jq`:
 
 ```sh
 grim -o $(swaymsg -t get_outputs | jq -r '.[] | select(.focused) | .name') screenshot.png
+```
+
+Pick a color, using ImageMagick:
+
+```sh
+grim -g "$(slurp -p)" -t ppm - | convert - -format '%[pixel:p{0,0}]' txt:-
 ```
 
 ## Package manager installation
@@ -66,11 +74,13 @@ meson build
 ninja -C build
 ```
 
-To run directly, use `build/grim`, or if you would like to do a system installation (in `/usr/local` by default), run `ninja -C build install`. 
+To run directly, use `build/grim`, or if you would like to do a system
+installation (in `/usr/local` by default), run `ninja -C build install`.
 
 ## Contributing
 
-Either [send GitHub pull requests][github] or [send patches on the mailing list][ml].
+Either [send GitHub pull requests][github] or [send patches on the mailing
+list][ml].
 
 ## License
 
