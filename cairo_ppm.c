@@ -52,7 +52,7 @@ cairo_status_t cairo_surface_write_to_ppm_mem(cairo_surface_t *sfc,
 
 static cairo_status_t cj_write(void *closure, const unsigned char *data,
 		unsigned int length) {
-	if (write((long) closure, data, length) < length) {
+	if (write((long) closure, data, length) < (ssize_t) length) {
 		return CAIRO_STATUS_WRITE_ERROR;
 	} else {
 		return CAIRO_STATUS_SUCCESS;
