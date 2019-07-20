@@ -82,6 +82,8 @@ installation (in `/usr/local` by default), run `ninja -C build install`.
 Either [send GitHub pull requests][github] or [send patches on the mailing
 list][ml].
 
+Join the IRC channel: ##emersion on Freenode.
+
 ## License
 
 MIT
