@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <cairo.h>
 #include <errno.h>
+#include <limits.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -193,32 +194,65 @@ static cairo_status_t write_func(void *data, const unsigned char *buf,
 	return CAIRO_STATUS_SUCCESS;
 }
 
-void default_filename(char *filename, size_t n, int filetype) {
+bool default_filename(char *filename, size_t n, int filetype) {
 	time_t time_epoch = time(NULL);
-	struct tm *time = gmtime(&time_epoch);
+	struct tm *time = localtime(&time_epoch);
 	if (time == NULL) {
-		perror("gmtime");
-		exit(EXIT_FAILURE);
+		perror("localtime");
+		return false;
 	}
 
 	char *format_str;
+	const char *ext;
 	switch (filetype) {
 	case GRIM_FILETYPE_PNG:
-		format_str = "%Y-%m-%dT%H:%M:%SZ_grim.png";
+		ext = "png";
+		break;
+	case GRIM_FILETYPE_PPM:
+		ext = "ppm";
 		break;
 	case GRIM_FILETYPE_JPEG:
 #if HAVE_JPEG
-		format_str = "%Y-%m-%dT%H:%M:%SZ_grim.jpeg";
+		ext = "jpeg";
 		break;
 #else
 		assert(false);
 #endif
 	}
 
+	char tmpstr[32];
+	sprintf(tmpstr, "%%Y%%m%%d_%%Hh%%Mm%%Ss_grim.%s", ext);
+	format_str = tmpstr;
 	if (strftime(filename, n, format_str, time) == 0) {
 		fprintf(stderr, "failed to format datetime with strftime(3)\n");
-		exit(EXIT_FAILURE);
+		return false;
 	}
+	return true;
+}
+
+static bool path_exists(const char *path) {
+	return path && access(path, R_OK) != -1;
+}
+
+char *get_output_dir(void) {
+	static const char *output_dirs[] = {
+		"GRIM_DEFAULT_DIR",
+		"XDG_PICTURES_DIR",
+	};
+
+	for (size_t i = 0; i < sizeof(output_dirs) / sizeof(char *); ++i) {
+		char *path = getenv(output_dirs[i]);
+		if (path_exists(path)) {
+			return path;
+		}
+	}
+
+	return ".";
+}
+
+void filepath(char *output_path, const char *filename) {
+	char *output_dir = get_output_dir();
+	sprintf(output_path, "%s/%s", output_dir, filename);
 }
 
 static const char usage[] =
@@ -325,13 +359,19 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
+	char output_filepath[PATH_MAX];
 	char *output_filename;
 	char tmp[64];
 	if (optind >= argc) {
-		default_filename(tmp, sizeof(tmp), output_filetype);
+		if (default_filename(tmp, sizeof(tmp), output_filetype) != true) {
+			fprintf(stderr, "failed to generate default filename\n");
+			return EXIT_FAILURE;
+		}
 		output_filename = tmp;
+		filepath(output_filepath, output_filename);
 	} else {
 		output_filename = argv[optind];
+		strcpy(output_filepath, output_filename);
 	}
 
 	struct grim_state state = {0};
@@ -464,15 +504,15 @@ int main(int argc, char *argv[]) {
 	} else {
 		switch (output_filetype) {
 		case GRIM_FILETYPE_PPM:
-			status = cairo_surface_write_to_ppm(surface, output_filename);
+			status = cairo_surface_write_to_ppm(surface, output_filepath);
 			break;
 		case GRIM_FILETYPE_PNG:
-			status = cairo_surface_write_to_png(surface, output_filename);
+			status = cairo_surface_write_to_png(surface, output_filepath);
 			break;
 		case GRIM_FILETYPE_JPEG:
 #if HAVE_JPEG
 			status = cairo_surface_write_to_jpeg(
-				surface, output_filename, jpeg_quality);
+				surface, output_filepath, jpeg_quality);
 			break;
 #else
 			assert(false);
