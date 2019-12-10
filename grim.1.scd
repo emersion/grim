@@ -14,9 +14,10 @@ grim is a command-line utility to take screenshots of Wayland desktops. For now
 it requires support for the screencopy protocol to work. Support for the
 xdg-output protocol is optional, but improves fractional scaling support.
 
-grim will write a PNG file to _output-file_, or to a default file name if not
-_output-file_ is not specified. If _output-file_ is *-*, it will output the file
-to the standard output instead.
+grim will write an image to _output-file_, or to a timestamped file name in
+*$GRIM_DEFAULT_DIR* if not specified. If *$GRIM_DEFAULT_DIR* is not set, it
+defaults to *$XDG_PICTURES_DIR*. If _output-file_ is *-*, grim will output the
+image to the standard output instead.
 
 # OPTIONS
 
@@ -34,7 +35,7 @@ to the standard output instead.
 
 *-t* <type>
 	Set the output image's file format to _type_. By default, the filetype
-	is set to *png* filetype, valid values are *png*, *jpeg* or *ppm*.
+	is set to *png*, valid values are *png*, *jpeg* or *ppm*.
 
 *-q* <quality>
 	Set the output jpeg's filetype compression rate to _quality_. By default,
