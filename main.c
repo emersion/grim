@@ -520,7 +520,10 @@ int main(int argc, char *argv[]) {
 		}
 	}
 	if (status != CAIRO_STATUS_SUCCESS) {
-		fprintf(stderr, "failed to write output file\n");
+		fprintf(stderr, "%s\n", cairo_status_to_string(status));
+		if (status == CAIRO_STATUS_WRITE_ERROR && strlen(output_filepath) > NAME_MAX) {
+			fprintf(stderr, "Hint: Output filepath length may be too long for your filesystem.");
+		}
 		return EXIT_FAILURE;
 	}
 
