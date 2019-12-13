@@ -218,6 +218,8 @@ bool default_filename(char *filename, size_t n, int filetype) {
 #else
 		assert(false);
 #endif
+	default:
+		ext = "png";
 	}
 
 	char tmpstr[32];
