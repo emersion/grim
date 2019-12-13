@@ -203,7 +203,7 @@ bool default_filename(char *filename, size_t n, int filetype) {
 	}
 
 	char *format_str;
-	const char *ext;
+	const char *ext = NULL;
 	switch (filetype) {
 	case GRIM_FILETYPE_PNG:
 		ext = "png";
@@ -219,7 +219,7 @@ bool default_filename(char *filename, size_t n, int filetype) {
 		assert(false);
 #endif
 	}
-
+	assert(ext != NULL);
 	char tmpstr[32];
 	sprintf(tmpstr, "%%Y%%m%%d_%%Hh%%Mm%%Ss_grim.%s", ext);
 	format_str = tmpstr;
