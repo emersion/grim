@@ -20,6 +20,7 @@ cc = meson.get_compiler('c')
 cairo = dependency('cairo')
 jpeg = dependency('libjpeg', required: get_option('jpeg'))
 math = cc.find_library('m')
+png = dependency('libpng')
 realtime = cc.find_library('rt')
 wayland_client = dependency('wayland-client')
 wayland_protos = dependency('wayland-protocols', version: '>=1.14')
@@ -37,12 +38,14 @@ grim_files = [
 	'output-layout.c',
 	'render.c',
 	'cairo_ppm.c',
+	'cairo_png.c',
 ]
 
 grim_deps = [
 	cairo,
 	client_protos,
 	math,
+	png,
 	realtime,
 	wayland_client,
 ]
