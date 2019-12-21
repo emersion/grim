@@ -33,6 +33,9 @@ cairo_status_t cairo_surface_write_to_png_mem(cairo_surface_t *sfc,
 
   png_structp png =
     png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+  if (png == NULL) {
+    return CAIRO_STATUS_NO_MEMORY;
+  }
 
   png_infop info = png_create_info_struct(png);
   if (info == NULL) {
