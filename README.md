@@ -1,7 +1,6 @@
 # grim
 
-Grab images from a Wayland compositor. Works great with [slurp] and with
-[sway] >= 1.0.
+Grab images from a Wayland compositor. Works great with [slurp] and with [sway].
 
 ## Example usage
 
@@ -53,10 +52,6 @@ Pick a color, using ImageMagick:
 ```sh
 grim -g "$(slurp -p)" -t ppm - | convert - -format '%[pixel:p{0,0}]' txt:-
 ```
-
-## Package manager installation
-
-* Arch Linux: `pacman -S grim`
 
 ## Building from source
 
