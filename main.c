@@ -483,7 +483,7 @@ int main(int argc, char *argv[]) {
 		return EXIT_FAILURE;
 	}
 
-	cairo_status_t status;
+	cairo_status_t status = CAIRO_STATUS_INVALID_STATUS;
 	if (strcmp(output_filename, "-") == 0) {
 		switch (output_filetype) {
 		case GRIM_FILETYPE_PPM:
