@@ -28,6 +28,7 @@ if jpeg.found()
 	add_project_arguments('-DHAVE_JPEG', language: 'c')
 endif
 
+subdir('contrib/completions')
 subdir('protocol')
 
 grim_files = [
