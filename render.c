@@ -104,7 +104,7 @@ cairo_surface_t *render(struct grim_state *state, struct grim_box *geometry,
 		cairo_matrix_translate(&matrix,
 			(double)output->geometry.width / 2,
 			(double)output->geometry.height / 2);
-		cairo_matrix_rotate(&matrix, -get_output_rotation(output->transform));
+		cairo_matrix_rotate(&matrix, get_output_rotation(output->transform));
 		cairo_matrix_scale(&matrix,
 			(double)raw_output_width / output_width * output_flipped_x,
 			(double)raw_output_height / output_height * output_flipped_y);
