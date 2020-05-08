@@ -460,7 +460,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	if (n_pending == 0) {
-		fprintf(stderr, "screenshot region is empty\n");
+		fprintf(stderr, "supplied geometry did not intersect with any outputs\n");
 		return EXIT_FAILURE;
 	}
 
