@@ -371,6 +371,10 @@ int main(int argc, char *argv[]) {
 		filepath(output_filepath, output_filename);
 	} else {
 		output_filename = argv[optind];
+		if (strlen(output_filename) >= PATH_MAX) {
+			fprintf(stderr, "'%s': filepath too long\n", output_filename);
+			return EXIT_FAILURE;
+		}
 		strcpy(output_filepath, output_filename);
 	}
 
