@@ -16,8 +16,9 @@ xdg-output protocol is optional, but improves fractional scaling support.
 
 grim will write an image to _output-file_, or to a timestamped file name in
 *$GRIM_DEFAULT_DIR* if not specified. If *$GRIM_DEFAULT_DIR* is not set, it
-defaults to *$XDG_PICTURES_DIR*. If _output-file_ is *-*, grim will output the
-image to the standard output instead.
+falls back first to *$XDG_PICTURES_DIR* and then to the current working
+directory. If _output-file_ is *-*, grim will write the image to the standard
+output instead.
 
 # OPTIONS
 
