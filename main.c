@@ -389,7 +389,6 @@ int main(int argc, char *argv[]) {
 
 	state.registry = wl_display_get_registry(state.display);
 	wl_registry_add_listener(state.registry, &registry_listener, &state);
-	wl_display_dispatch(state.display);
 	wl_display_roundtrip(state.display);
 
 	if (state.shm == NULL) {
@@ -410,7 +409,6 @@ int main(int argc, char *argv[]) {
 				&xdg_output_listener, output);
 		}
 
-		wl_display_dispatch(state.display);
 		wl_display_roundtrip(state.display);
 	} else {
 		fprintf(stderr, "warning: zxdg_output_manager_v1 isn't available, "
