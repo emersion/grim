@@ -57,29 +57,5 @@ executable(
 	install: true,
 )
 
-scdoc = find_program('scdoc', required: get_option('man-pages'))
-
-if scdoc.found()
-	sh = find_program('sh')
-
-	man_pages = ['grim.1.scd']
-
-	mandir = get_option('mandir')
-
-	foreach src : man_pages
-		topic = src.split('.')[0]
-		section = src.split('.')[1]
-		output = '@0@.@1@'.format(topic, section)
-
-		custom_target(
-			output,
-			input: src,
-			output: output,
-			command: [
-				sh, '-c', '@0@ < @INPUT@ > @1@'.format(scdoc.path(), output)
-			],
-			install: true,
-			install_dir: '@0@/man@1@'.format(mandir, section)
-		)
-	endforeach
-endif
+install_data('grim.1', install_dir :
+    join_paths(get_option('prefix'), get_option('mandir'), 'man1'))

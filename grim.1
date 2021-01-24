@@ -1,0 +1,89 @@
+.Dd $Mdocdate: January 24 2021 $
+.Dt GRIM 1
+.Os
+.Sh NAME
+.Nm grim
+.Nd grab images from a Wayland compositor
+.Sh SYNOPSIS
+.Nm
+.Op Fl c
+.Op Fl g Ar "<x>,<y> <width>x<height>"
+.Op Fl h
+.Op Fl o Ar output
+.Op Fl q Ar quality
+.Op Fl s Ar factor
+.Op Fl t Ar type
+.Op output-file
+.Sh DESCRIPTION
+.Nm
+is a command-line utility to take screenshots of Wayland desktops.
+For now it requires support for the screencopy protocol to work.
+Support for the xdg-output protocol is optional, but improves
+fractional scaling support.
+.Pp
+.Nm
+will write an image to
+.Ar output-file ,
+or to a timestamped file name in
+.Ev GRIM_DEFAULT_DIR
+if not specified.
+If
+.Ev GRIM_DEFAULT_DIR
+is not set, it falls back first to
+.Ev XDG_PICTURES_DIR
+and then to the current working directory.
+If
+.Ar output-file
+is - ,
+.Nm
+will write the image to the standard output instead.
+.Sh OPTIONS
+.Bl -tag -width Ds -compact 
+.It Fl c
+Include cursors in the screenshot.
+.Pp
+.It Fl g Ar "<x>,<y> <width>x<height>"
+Set the region to capture, in layout coordinates.
+.Pp
+If set to
+.Sy - ,
+read the region from the standard input instead.
+.Pp
+.It Fl h
+Show help message and quit.
+.Pp
+.It Fl o Ar output
+Set the output name to capture.
+.Pp
+.It Fl s Ar factor
+Set the output image's scale factor to
+.Ar factor .
+By default, the scale factor is set to the highest of
+all outputs.
+.Pp
+.It Fl q Ar quality
+Set the output jpeg's filetype compression rate to
+.Ar quality .
+By default, the jpeg quality is
+.Ar 80 ,
+valid values are between 0-100.
+.Pp
+.It Fl t Ar type
+Set the output image's file format to
+.Ar type .
+By default, the filetype is set to
+.Ar png ,
+where valid values are
+.Ar png , jpeg
+or
+.Ar ppm .
+.El
+.Sh AUTHORS
+Maintained by
+.An Simon Ser Aq Mt contact@emersion.fr ,
+who is assisted by other open-source contributors.
+.Pp
+For more information about
+.Nm
+development, see
+.Lk https://github.com/emersion/grim .
