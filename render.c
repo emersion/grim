@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "buffer.h"
 #include "output-layout.h"
@@ -36,7 +37,7 @@ static bool convert_buffer(struct grim_buffer *buffer) {
 		fprintf(stderr, "unsupported format %d\n", buffer->format);
 		return false;
 	}
-	assert(false);
+	abort();
 }
 
 static cairo_format_t get_cairo_format(enum wl_shm_format wl_fmt) {
@@ -48,7 +49,7 @@ static cairo_format_t get_cairo_format(enum wl_shm_format wl_fmt) {
 	default:
 		return CAIRO_FORMAT_INVALID;
 	}
-	assert(false);
+	abort();
 }
 
 cairo_surface_t *render(struct grim_state *state, struct grim_box *geometry,

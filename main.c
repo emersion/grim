@@ -216,7 +216,7 @@ bool default_filename(char *filename, size_t n, int filetype) {
 		ext = "jpeg";
 		break;
 #else
-		assert(false);
+		abort();
 #endif
 	}
 	assert(ext != NULL);
@@ -500,7 +500,7 @@ int main(int argc, char *argv[]) {
 				stdout, jpeg_quality);
 			break;
 #else
-			assert(false);
+			abort();
 #endif
 		}
 	} else {
@@ -517,7 +517,7 @@ int main(int argc, char *argv[]) {
 				surface, output_filepath, jpeg_quality);
 			break;
 #else
-			assert(false);
+			abort();
 #endif
 		}
 	}
