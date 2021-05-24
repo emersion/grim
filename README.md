@@ -47,6 +47,13 @@ Grab a screenshot from the focused monitor under Sway, using `swaymsg` and
 grim -o $(swaymsg -t get_outputs | jq -r '.[] | select(.focused) | .name')
 ```
 
+Grab a screenshot from the focused window under Sway, using `swaymsg` and
+`jq`:
+
+```sh
+grim -g "$(swaymsg -t get_tree | jq -j '.. | select(.type?) | select(.focused).rect | "\(.x),\(.y) \(.width)x\(.height)"')"
+```
+
 Pick a color, using ImageMagick:
 
 ```sh
