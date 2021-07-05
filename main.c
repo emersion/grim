@@ -234,14 +234,14 @@ static bool path_exists(const char *path) {
 	return path && access(path, R_OK) != -1;
 }
 
-char *get_output_dir(void) {
+const char *get_output_dir(void) {
 	static const char *output_dirs[] = {
 		"GRIM_DEFAULT_DIR",
 		"XDG_PICTURES_DIR",
 	};
 
 	for (size_t i = 0; i < sizeof(output_dirs) / sizeof(char *); ++i) {
-		char *path = getenv(output_dirs[i]);
+		const char *path = getenv(output_dirs[i]);
 		if (path_exists(path)) {
 			return path;
 		}
@@ -251,7 +251,7 @@ char *get_output_dir(void) {
 }
 
 void filepath(char *output_path, const char *filename) {
-	char *output_dir = get_output_dir();
+	const char *output_dir = get_output_dir();
 	sprintf(output_path, "%s/%s", output_dir, filename);
 }
 
