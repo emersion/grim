@@ -355,7 +355,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	char output_filepath[PATH_MAX];
-	char *output_filename;
+	const char *output_filename;
 	char tmp[64];
 	if (optind >= argc) {
 		if (default_filename(tmp, sizeof(tmp), output_filetype) != true) {
