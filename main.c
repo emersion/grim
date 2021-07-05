@@ -354,26 +354,27 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
-	char output_filepath[PATH_MAX];
 	const char *output_filename;
+	char *output_filepath;
 	char tmp[64];
 	if (optind >= argc) {
-		if (default_filename(tmp, sizeof(tmp), output_filetype) != true) {
+		if (!default_filename(tmp, sizeof(tmp), output_filetype)) {
 			fprintf(stderr, "failed to generate default filename\n");
 			return EXIT_FAILURE;
 		}
 		output_filename = tmp;
 
 		const char *output_dir = get_output_dir();
-		snprintf(output_filepath, sizeof(output_filepath),
-			"%s/%s", output_dir, output_filename);
-	} else {
-		output_filename = argv[optind];
-		if (strlen(output_filename) >= PATH_MAX) {
-			fprintf(stderr, "'%s': filepath too long\n", output_filename);
+		int len = snprintf(NULL, 0, "%s/%s", output_dir, output_filename);
+		if (len < 0) {
+			perror("snprintf failed");
 			return EXIT_FAILURE;
 		}
-		strcpy(output_filepath, output_filename);
+		output_filepath = malloc(len + 1);
+		snprintf(output_filepath, len + 1, "%s/%s", output_dir, output_filename);
+	} else {
+		output_filename = argv[optind];
+		output_filepath = strdup(output_filename);
 	}
 
 	struct grim_state state = {0};
@@ -527,6 +528,7 @@ int main(int argc, char *argv[]) {
 		return EXIT_FAILURE;
 	}
 
+	free(output_filepath);
 	cairo_surface_destroy(surface);
 
 	struct grim_output *output_tmp;
