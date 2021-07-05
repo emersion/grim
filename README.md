@@ -40,6 +40,14 @@ Screenshoot and copy to clipboard:
 grim - | wl-copy
 ```
 
+Delay screenshot by n seconds:
+
+```sh
+sleep n; grim
+```
+```
+grim -g "$(slurp; sleep n)"
+```
 Grab a screenshot from the focused monitor under Sway, using `swaymsg` and
 `jq`:
 
