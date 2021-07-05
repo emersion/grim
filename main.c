@@ -194,7 +194,7 @@ static cairo_status_t write_func(void *data, const unsigned char *buf,
 	return CAIRO_STATUS_SUCCESS;
 }
 
-bool default_filename(char *filename, size_t n, int filetype) {
+static bool default_filename(char *filename, size_t n, int filetype) {
 	time_t time_epoch = time(NULL);
 	struct tm *time = localtime(&time_epoch);
 	if (time == NULL) {
@@ -234,7 +234,7 @@ static bool path_exists(const char *path) {
 	return path && access(path, R_OK) != -1;
 }
 
-const char *get_output_dir(void) {
+static const char *get_output_dir(void) {
 	static const char *output_dirs[] = {
 		"GRIM_DEFAULT_DIR",
 		"XDG_PICTURES_DIR",
@@ -248,11 +248,6 @@ const char *get_output_dir(void) {
 	}
 
 	return ".";
-}
-
-void filepath(char *output_path, const char *filename) {
-	const char *output_dir = get_output_dir();
-	sprintf(output_path, "%s/%s", output_dir, filename);
 }
 
 static const char usage[] =
@@ -368,7 +363,10 @@ int main(int argc, char *argv[]) {
 			return EXIT_FAILURE;
 		}
 		output_filename = tmp;
-		filepath(output_filepath, output_filename);
+
+		const char *output_dir = get_output_dir();
+		snprintf(output_filepath, sizeof(output_filepath),
+			"%s/%s", output_dir, output_filename);
 	} else {
 		output_filename = argv[optind];
 		if (strlen(output_filename) >= PATH_MAX) {
