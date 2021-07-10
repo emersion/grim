@@ -117,6 +117,9 @@ static void output_handle_geometry(void *data, struct wl_output *wl_output,
 
 	output->geometry.x = x;
 	output->geometry.y = y;
+	output->geometry.physical_width = physical_width;
+	output->geometry.physical_height = physical_height;
+        printf("debug phys: %dmm x %dmm\n", physical_width, physical_height);
 	output->transform = transform;
 }
 
@@ -300,6 +303,7 @@ int main(int argc, char *argv[]) {
 
 			free(geometry);
 			geometry = calloc(1, sizeof(struct grim_box));
+
 			if (!parse_box(geometry, geometry_str)) {
 				fprintf(stderr, "invalid geometry\n");
 				return EXIT_FAILURE;
@@ -479,6 +483,12 @@ int main(int argc, char *argv[]) {
 		get_output_layout_extents(&state, geometry);
 	}
 
+        printf("debug output_layout_extents: %dpx x %dpx\n", geometry->width, geometry->height);
+	//TODO
+	//int px_per_mm_x = geometry->width/(output_layout_extents_physical);
+	//int px_per_mm_y = geometry->height/(output_layout_extents_physical);
+	//printf("px/mm values: %d x %d\n", pxmm_x, pxmm_y);
+
 	cairo_surface_t *surface = render(&state, geometry, scale);
 	if (surface == NULL) {
 		return EXIT_FAILURE;
@@ -520,6 +530,7 @@ int main(int argc, char *argv[]) {
 #endif
 		}
 	}
+	printf("Status was: %d, success is %d", status, CAIRO_STATUS_SUCCESS);
 	if (status != CAIRO_STATUS_SUCCESS) {
 		fprintf(stderr, "%s\n", cairo_status_to_string(status));
 		if (status == CAIRO_STATUS_WRITE_ERROR && strlen(output_filepath) > NAME_MAX) {
