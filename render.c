@@ -52,7 +52,8 @@ static cairo_surface_t *convert_buffer(struct grim_buffer *buffer) {
 			buffer->data, format, buffer->width, buffer->height,
 			buffer->stride);
 	default:
-		fprintf(stderr, "unsupported format %d\n", buffer->format);
+		fprintf(stderr, "unsupported format %d = 0x%08x\n",
+			buffer->format, buffer->format);
 		return NULL;
 	}
 }
