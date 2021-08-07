@@ -6,15 +6,22 @@
 #include "output-layout.h"
 #include "render.h"
 
-static bool convert_buffer(struct grim_buffer *buffer) {
-	// Formats are little-endian
-	switch (buffer->format) {
-	case WL_SHM_FORMAT_ARGB8888:
-	case WL_SHM_FORMAT_XRGB8888:
-		// Natively supported by Cairo
-		return true;
+static bool format_has_alpha(uint32_t format) {
+	switch (format) {
 	case WL_SHM_FORMAT_ABGR8888:
-	case WL_SHM_FORMAT_XBGR8888:;
+	case WL_SHM_FORMAT_ARGB8888:
+		return true;
+	case WL_SHM_FORMAT_XRGB8888:
+	case WL_SHM_FORMAT_XBGR8888:
+		return false;
+	default:
+		assert(false);
+	}
+}
+
+static cairo_surface_t *convert_buffer(struct grim_buffer *buffer) {
+	if (buffer->format == WL_SHM_FORMAT_ABGR8888 ||
+		buffer->format == WL_SHM_FORMAT_XBGR8888) {
 		// ABGR -> ARGB
 		uint8_t *data = buffer->data;
 		for (int i = 0; i < buffer->height; ++i) {
@@ -32,24 +39,22 @@ static bool convert_buffer(struct grim_buffer *buffer) {
 		} else {
 			buffer->format = WL_SHM_FORMAT_XRGB8888;
 		}
-		return true;
+	}
+
+	// Formats are little-endian
+	switch (buffer->format) {
+	case WL_SHM_FORMAT_ARGB8888:
+	case WL_SHM_FORMAT_XRGB8888:;
+		// Natively supported by Cairo
+		cairo_format_t format = format_has_alpha(buffer->format) ?
+			CAIRO_FORMAT_ARGB32 : CAIRO_FORMAT_RGB24;
+		return cairo_image_surface_create_for_data(
+			buffer->data, format, buffer->width, buffer->height,
+			buffer->stride);
 	default:
 		fprintf(stderr, "unsupported format %d\n", buffer->format);
-		return false;
+		return NULL;
 	}
-	abort();
-}
-
-static cairo_format_t get_cairo_format(enum wl_shm_format wl_fmt) {
-	switch (wl_fmt) {
-	case WL_SHM_FORMAT_ARGB8888:
-		return CAIRO_FORMAT_ARGB32;
-	case WL_SHM_FORMAT_XRGB8888:
-		return CAIRO_FORMAT_RGB24;
-	default:
-		return CAIRO_FORMAT_INVALID;
-	}
-	abort();
 }
 
 cairo_surface_t *render(struct grim_state *state, struct grim_box *geometry,
@@ -72,12 +77,10 @@ cairo_surface_t *render(struct grim_state *state, struct grim_box *geometry,
 			continue;
 		}
 
-		if (!convert_buffer(buffer)) {
+		cairo_surface_t *output_surface = convert_buffer(buffer);
+		if (!output_surface) {
 			return NULL;
 		}
-
-		cairo_format_t cairo_fmt = get_cairo_format(buffer->format);
-		assert(cairo_fmt != CAIRO_FORMAT_INVALID);
 
 		int32_t output_x = output->logical_geometry.x - geometry->x;
 		int32_t output_y = output->logical_geometry.y - geometry->y;
@@ -93,9 +96,6 @@ cairo_surface_t *render(struct grim_state *state, struct grim_box *geometry,
 		int output_flipped_y = output->screencopy_frame_flags &
 			ZWLR_SCREENCOPY_FRAME_V1_FLAGS_Y_INVERT ? -1 : 1;
 
-		cairo_surface_t *output_surface = cairo_image_surface_create_for_data(
-			buffer->data, cairo_fmt, buffer->width, buffer->height,
-			buffer->stride);
 		cairo_pattern_t *output_pattern =
 			cairo_pattern_create_for_surface(output_surface);
 
