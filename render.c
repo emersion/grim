@@ -10,9 +10,13 @@ static bool format_has_alpha(uint32_t format) {
 	switch (format) {
 	case WL_SHM_FORMAT_ABGR8888:
 	case WL_SHM_FORMAT_ARGB8888:
+	case WL_SHM_FORMAT_ARGB2101010:
+	case WL_SHM_FORMAT_ABGR2101010:
 		return true;
 	case WL_SHM_FORMAT_XRGB8888:
 	case WL_SHM_FORMAT_XBGR8888:
+	case WL_SHM_FORMAT_XRGB2101010:
+	case WL_SHM_FORMAT_XBGR2101010:
 		return false;
 	default:
 		assert(false);
@@ -51,6 +55,55 @@ static cairo_surface_t *convert_buffer(struct grim_buffer *buffer) {
 		return cairo_image_surface_create_for_data(
 			buffer->data, format, buffer->width, buffer->height,
 			buffer->stride);
+	case WL_SHM_FORMAT_ARGB2101010:
+	case WL_SHM_FORMAT_XRGB2101010:
+	case WL_SHM_FORMAT_ABGR2101010:
+	case WL_SHM_FORMAT_XBGR2101010:;
+		bool has_alpha = format_has_alpha(buffer->format);
+		cairo_format_t float_format =
+			has_alpha ? CAIRO_FORMAT_RGBA128F : CAIRO_FORMAT_RGB96F;
+		int bytes_per_pixel = has_alpha ? 16 : 12;
+		cairo_surface_t *surface = cairo_image_surface_create(
+			float_format, buffer->width, buffer->height);
+
+		int stride = cairo_image_surface_get_stride(surface);
+		uint8_t *data = cairo_image_surface_get_data(surface);
+		uint8_t *buffer_data = buffer->data;
+		for (int y = 0; y < buffer->height; y++) {
+			for (int x = 0; x < buffer->width; x++) {
+				uint32_t *px = (uint32_t *)(buffer_data + y * buffer->stride + x * 4);
+				float *rgba = (float *)(data + y * stride + x * bytes_per_pixel);
+
+				switch (buffer->format) {
+				case WL_SHM_FORMAT_ARGB2101010:
+					rgba[3] = ((*px >> 30) & 0x3) / 3.f;
+					rgba[0] = ((*px >> 20) & 0x3ff) / 1023.f;
+					rgba[1] = ((*px >> 10) & 0x3ff) / 1023.f;
+					rgba[2] = ((*px >> 0) & 0x3ff) / 1023.f;
+					break;
+				case WL_SHM_FORMAT_XRGB2101010:
+					rgba[0] = ((*px >> 20) & 0x3ff) / 1023.f;
+					rgba[1] = ((*px >> 10) & 0x3ff) / 1023.f;
+					rgba[2] = ((*px >> 0) & 0x3ff) / 1023.f;
+					break;
+				case WL_SHM_FORMAT_ABGR2101010:
+					rgba[3] = ((*px >> 30) & 0x3) / 3.f;
+					rgba[2] = ((*px >> 20) & 0x3ff) / 1023.f;
+					rgba[1] = ((*px >> 10) & 0x3ff) / 1023.f;
+					rgba[0] = ((*px >> 0) & 0x3ff) / 1023.f;
+					break;
+				case WL_SHM_FORMAT_XBGR2101010:
+					rgba[2] = ((*px >> 20) & 0x3ff) / 1023.f;
+					rgba[1] = ((*px >> 10) & 0x3ff) / 1023.f;
+					rgba[0] = ((*px >> 0) & 0x3ff) / 1023.f;
+					break;
+				default:
+					assert(false);
+				}
+			}
+		}
+		cairo_surface_mark_dirty(surface);
+		return surface;
 	default:
 		fprintf(stderr, "unsupported format %d = 0x%08x\n",
 			buffer->format, buffer->format);
