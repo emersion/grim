@@ -23,6 +23,18 @@ static bool format_has_alpha(uint32_t format) {
 	}
 }
 
+static bool format_is_wide(uint32_t format) {
+	switch (format) {
+	case WL_SHM_FORMAT_XRGB2101010:
+	case WL_SHM_FORMAT_XBGR2101010:
+	case WL_SHM_FORMAT_ARGB2101010:
+	case WL_SHM_FORMAT_ABGR2101010:
+		return true;
+	default:
+		return false;
+	}
+}
+
 static cairo_surface_t *convert_buffer(struct grim_buffer *buffer) {
 	if (buffer->format == WL_SHM_FORMAT_ABGR8888 ||
 		buffer->format == WL_SHM_FORMAT_XBGR8888) {
@@ -113,7 +125,17 @@ static cairo_surface_t *convert_buffer(struct grim_buffer *buffer) {
 
 cairo_surface_t *render(struct grim_state *state, struct grim_box *geometry,
 		double scale) {
-	cairo_surface_t *surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32,
+	bool wide = false;
+	struct grim_output *output;
+	wl_list_for_each(output, &state->outputs, link) {
+		struct grim_buffer *buffer = output->buffer;
+		if (buffer) {
+			wide = wide || format_is_wide(buffer->format);
+		}
+	}
+
+	cairo_surface_t *surface = cairo_image_surface_create(
+		wide ? CAIRO_FORMAT_RGBA128F : CAIRO_FORMAT_ARGB32,
 		geometry->width * scale, geometry->height * scale);
 	cairo_t *cairo = cairo_create(surface);
 
@@ -124,7 +146,6 @@ cairo_surface_t *render(struct grim_state *state, struct grim_box *geometry,
 	cairo_paint(cairo);
 	cairo_restore(cairo);
 
-	struct grim_output *output;
 	wl_list_for_each(output, &state->outputs, link) {
 		struct grim_buffer *buffer = output->buffer;
 		if (buffer == NULL) {
