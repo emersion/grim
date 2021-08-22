@@ -4,11 +4,11 @@ grim(1)
 
 grim - grab images from a Wayland compositor
 
-# DESCRIPTION
+# SYNOPSIS
 
 *grim* [options...] [output-file]
 
-# SYNOPSIS
+# DESCRIPTION
 
 grim is a command-line utility to take screenshots of Wayland desktops. For now
 it requires support for the screencopy protocol to work. Support for the
