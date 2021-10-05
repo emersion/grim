@@ -42,6 +42,14 @@ output instead.
 	Set the output jpeg's filetype compression rate to _quality_. By default,
 	the jpeg quality is *80*, valid values are between 0-100.
 
+*-l* <level>
+	Set the output PNG's filetype compression level to _level_. By default,
+	the PNG compression level is 6 on a scale from 0 to 9. Level 9 gives
+	the highest compression ratio, but may be slow; level 1 gives a lower
+	compression ratio, but is faster. Level 0 does no compression at all,
+	and produces very large files; it can be useful when grim is used
+	in a pipeline with other commands.
+
 *-o* <output>
 	Set the output name to capture.
 

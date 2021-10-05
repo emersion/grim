@@ -18,6 +18,7 @@
 #ifdef HAVE_JPEG
 #include "cairo_jpg.h"
 #endif
+#include "write_png.h"
 
 static void screencopy_frame_handle_buffer(void *data,
 		struct zwlr_screencopy_frame_v1 *frame, uint32_t format, uint32_t width,
@@ -259,6 +260,7 @@ static const char usage[] =
 	"  -g <geometry>   Set the region to capture.\n"
 	"  -t png|ppm|jpeg Set the output filetype. Defaults to png.\n"
 	"  -q <quality>    Set the JPEG filetype quality 0-100. Defaults to 80.\n"
+	"  -l <level>      Set the PNG filetype compression level 0-9. Defaults to 6.\n"
 	"  -o <output>     Set the output name to capture.\n"
 	"  -c              Include cursors in the screenshot.\n";
 
@@ -269,9 +271,10 @@ int main(int argc, char *argv[]) {
 	char *geometry_output = NULL;
 	enum grim_filetype output_filetype = GRIM_FILETYPE_PNG;
 	int jpeg_quality = 80;
+	int png_level = 6; // current default png/zlib compression level
 	bool with_cursor = false;
 	int opt;
-	while ((opt = getopt(argc, argv, "hs:g:t:q:o:c")) != -1) {
+	while ((opt = getopt(argc, argv, "hs:g:t:q:l:o:c")) != -1) {
 		switch (opt) {
 		case 'h':
 			printf("%s", usage);
@@ -338,6 +341,24 @@ int main(int argc, char *argv[]) {
 				}
 				if (jpeg_quality < 0 || jpeg_quality > 100) {
 					fprintf(stderr, "quality valid values are between 0-100\n");
+					return EXIT_FAILURE;
+				}
+			}
+			break;
+		case 'l':
+			if (output_filetype != GRIM_FILETYPE_PNG) {
+				fprintf(stderr, "compression level is used only for png files\n");
+				return EXIT_FAILURE;
+			} else {
+				char *endptr = NULL;
+				errno = 0;
+				png_level = strtol(optarg, &endptr, 10);
+				if (*endptr != '\0' || errno) {
+					fprintf(stderr, "level must be a integer\n");
+					return EXIT_FAILURE;
+				}
+				if (png_level < 0 || png_level > 9) {
+					fprintf(stderr, "compression level valid values are between 0-9\n");
 					return EXIT_FAILURE;
 				}
 			}
@@ -491,7 +512,7 @@ int main(int argc, char *argv[]) {
 			status = cairo_surface_write_to_ppm_stream(surface, write_func, stdout);
 			break;
 		case GRIM_FILETYPE_PNG:
-			status = cairo_surface_write_to_png_stream(surface, write_func, stdout);
+			status = write_to_png_stream(surface, stdout, png_level);
 			break;
 		case GRIM_FILETYPE_JPEG:
 #if HAVE_JPEG
@@ -503,12 +524,19 @@ int main(int argc, char *argv[]) {
 #endif
 		}
 	} else {
+		FILE *file;
 		switch (output_filetype) {
 		case GRIM_FILETYPE_PPM:
 			status = cairo_surface_write_to_ppm(surface, output_filepath);
 			break;
 		case GRIM_FILETYPE_PNG:
-			status = cairo_surface_write_to_png(surface, output_filepath);
+			file = fopen(output_filepath, "wb");
+			if (!file) {
+				status = CAIRO_STATUS_WRITE_ERROR;
+			} else {
+				status =  write_to_png_stream(surface, file, png_level);
+				fclose(file);
+			}
 			break;
 		case GRIM_FILETYPE_JPEG:
 #if HAVE_JPEG
