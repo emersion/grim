@@ -14,6 +14,7 @@ grim_inc = include_directories('include')
 cc = meson.get_compiler('c')
 
 cairo = dependency('cairo')
+png = dependency('libpng')
 jpeg = dependency('libjpeg', required: get_option('jpeg'))
 math = cc.find_library('m')
 pixman = dependency('pixman-1')
@@ -35,6 +36,7 @@ grim_files = [
 	'output-layout.c',
 	'render.c',
 	'cairo_ppm.c',
+	'write_png.c',
 ]
 
 grim_deps = [
@@ -42,6 +44,7 @@ grim_deps = [
 	client_protos,
 	math,
 	pixman,
+	png,
 	realtime,
 	wayland_client,
 ]
