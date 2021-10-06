@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -126,7 +127,6 @@ cairo_surface_t *render(struct grim_state *state, struct grim_box *geometry,
 			fprintf(stderr, "Failed to create image\n");
 			return NULL;
 		}
-		pixman_image_set_filter(output_image, PIXMAN_FILTER_BEST, NULL, 0);
 
 		// The transformation `out2com` will send a pixel in the output_image
 		// to one in the common_image
@@ -161,6 +161,30 @@ cairo_surface_t *render(struct grim_state *state, struct grim_box *geometry,
 		struct pixman_transform c2o_fixedpt;
 		pixman_transform_from_pixman_f_transform(&c2o_fixedpt, &com2out);
 		pixman_image_set_transform(output_image, &c2o_fixedpt);
+
+		double x_scale = fmax(fabs(out2com.m[0][0]), fabs(out2com.m[0][1]));
+		double y_scale = fmax(fabs(out2com.m[1][0]), fabs(out2com.m[1][1]));
+		if (x_scale >= 0.75 && y_scale >= 0.75) {
+			// Bilinear scaling is relatively fast and gives decent
+			// results for upscaling and light downscaling
+			pixman_image_set_filter(output_image,
+				PIXMAN_FILTER_BILINEAR, NULL, 0);
+		} else {
+			// When downscaling, convolve the output_image so that each
+			// pixel in the common_image collects colors from a region
+			// of size roughly 1/x_scale*1/y_scale in the output_image
+			int n_values = 0;
+			pixman_fixed_t *conv = pixman_filter_create_separable_convolution(
+				&n_values,
+				pixman_double_to_fixed(fmax(1., 1. / x_scale)),
+				pixman_double_to_fixed(fmax(1., 1. / y_scale)),
+				PIXMAN_KERNEL_IMPULSE, PIXMAN_KERNEL_IMPULSE,
+				PIXMAN_KERNEL_LANCZOS2, PIXMAN_KERNEL_LANCZOS2,
+				2, 2);
+			pixman_image_set_filter(output_image,
+				PIXMAN_FILTER_SEPARABLE_CONVOLUTION, conv, n_values);
+			free(conv);
+		}
 
 		bool overlapping = false;
 		struct grim_output *other_output;
