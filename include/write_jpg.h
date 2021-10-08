@@ -1,5 +1,5 @@
-#ifndef _CAIRO_JPEG_H
-#define _CAIRO_JPEG_H
+#ifndef _WRITE_JPEG_H
+#define _WRITE_JPEG_H
 
 #include <cairo.h>
 

@@ -14,7 +14,7 @@
 #include <cairo.h>
 #include <jpeglib.h>
 
-#include "cairo_jpg.h"
+#include "write_jpg.h"
 
 cairo_status_t cairo_surface_write_to_jpeg_mem(cairo_surface_t *sfc,
 		unsigned char **data, unsigned long *len, int quality) {

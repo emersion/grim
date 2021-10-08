@@ -14,9 +14,9 @@
 #include "grim.h"
 #include "output-layout.h"
 #include "render.h"
-#include "cairo_ppm.h"
+#include "write_ppm.h"
 #ifdef HAVE_JPEG
-#include "cairo_jpg.h"
+#include "write_jpg.h"
 #endif
 #include "write_png.h"
 

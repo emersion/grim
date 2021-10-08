@@ -1,5 +1,5 @@
-#ifndef _CAIRO_PPM_H
-#define _CAIRO_PPM_H
+#ifndef _WRITE_PPM_H
+#define _WRITE_PPM_H
 
 #include <cairo.h>
 
