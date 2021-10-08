@@ -1,6 +1,5 @@
 #define _POSIX_C_SOURCE 200809L
 #include <assert.h>
-#include <cairo.h>
 #include <errno.h>
 #include <limits.h>
 #include <pixman.h>
@@ -489,15 +488,10 @@ int main(int argc, char *argv[]) {
 		get_output_layout_extents(&state, geometry);
 	}
 
-	cairo_surface_t *surface = render(&state, geometry, scale);
-	if (surface == NULL) {
+	pixman_image_t *image = render(&state, geometry, scale);
+	if (image == NULL) {
 		return EXIT_FAILURE;
 	}
-	pixman_image_t *image = pixman_image_create_bits(PIXMAN_a8r8g8b8,
-		cairo_image_surface_get_width(surface),
-		cairo_image_surface_get_height(surface),
-		(uint32_t *)cairo_image_surface_get_data(surface),
-		cairo_image_surface_get_stride(surface));
 
 	FILE *file;
 	if (strcmp(output_filename, "-") == 0) {
@@ -538,7 +532,6 @@ int main(int argc, char *argv[]) {
 
 	free(output_filepath);
 	pixman_image_unref(image);
-	cairo_surface_destroy(surface);
 
 	struct grim_output *output_tmp;
 	wl_list_for_each_safe(output, output_tmp, &state.outputs, link) {
