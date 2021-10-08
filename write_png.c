@@ -1,4 +1,4 @@
-#include <cairo.h>
+#include <assert.h>
 #include <png.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -35,20 +35,18 @@ static void pack_row32(uint8_t *restrict row_out, const uint32_t *restrict row_i
 	}
 }
 
-int write_to_png_stream(cairo_surface_t *image, FILE *stream,
+int write_to_png_stream(pixman_image_t *image, FILE *stream,
 		int comp_level) {
-	cairo_format_t format = cairo_image_surface_get_format(image);
-	if (format != CAIRO_FORMAT_RGB24 && format != CAIRO_FORMAT_ARGB32) {
-		abort();
-	}
+	pixman_format_code_t format = pixman_image_get_format(image);
+	assert(format == PIXMAN_a8r8g8b8 || format == PIXMAN_x8r8g8b8);
 
-	int width = cairo_image_surface_get_width(image);
-	int height = cairo_image_surface_get_height(image);
-	int stride = cairo_image_surface_get_stride(image);
-	const unsigned char *data = cairo_image_surface_get_data(image);
+	int width = pixman_image_get_width(image);
+	int height = pixman_image_get_height(image);
+	int stride = pixman_image_get_stride(image);
+	const unsigned char *data = (unsigned char *)pixman_image_get_data(image);
 
 	bool fully_opaque = true;
-	if (format == CAIRO_FORMAT_ARGB32) {
+	if (format == PIXMAN_a8r8g8b8) {
 		for (int y = 0; y < height; y++) {
 			const uint32_t *row = (const uint32_t *)(data + y * stride);
 			for (int x = 0; x < height; x++) {

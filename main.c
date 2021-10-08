@@ -517,7 +517,7 @@ int main(int argc, char *argv[]) {
 		ret = write_to_ppm_stream(image, file);
 		break;
 	case GRIM_FILETYPE_PNG:
-		ret = write_to_png_stream(surface, file, png_level);
+		ret = write_to_png_stream(image, file, png_level);
 		break;
 	case GRIM_FILETYPE_JPEG:
 #if HAVE_JPEG
