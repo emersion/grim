@@ -13,7 +13,6 @@ grim_inc = include_directories('include')
 
 cc = meson.get_compiler('c')
 
-cairo = dependency('cairo')
 png = dependency('libpng')
 jpeg = dependency('libjpeg', required: get_option('jpeg'))
 math = cc.find_library('m')
@@ -43,7 +42,6 @@ grim_files = [
 ]
 
 grim_deps = [
-	cairo,
 	client_protos,
 	math,
 	pixman,
