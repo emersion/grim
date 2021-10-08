@@ -21,31 +21,6 @@ int cairo_surface_write_to_jpeg_stream(cairo_surface_t *sfc,
 	struct jpeg_compress_struct cinfo;
 	struct jpeg_error_mgr jerr;
 	JSAMPROW row_pointer[1];
-	cairo_surface_t *other = NULL;
-
-	if (cairo_surface_get_type(sfc) != CAIRO_SURFACE_TYPE_IMAGE ||
-			(cairo_image_surface_get_format(sfc) != CAIRO_FORMAT_ARGB32 &&
-			cairo_image_surface_get_format(sfc) != CAIRO_FORMAT_RGB24)) {
-		double x1, y1, x2, y2;
-		other = sfc;
-		cairo_t *ctx = cairo_create(other);
-		cairo_clip_extents(ctx, &x1, &y1, &x2, &y2);
-		cairo_destroy(ctx);
-
-		sfc = cairo_surface_create_similar_image(other, CAIRO_FORMAT_RGB24,
-			x2 - x1, y2 - y1);
-		if (cairo_surface_status(sfc) != CAIRO_STATUS_SUCCESS) {
-			fprintf(stderr, "failed to convert image\n");
-			return -1;
-		}
-
-		ctx = cairo_create(sfc);
-		cairo_set_source_surface(ctx, other, 0, 0);
-		cairo_paint(ctx);
-		cairo_destroy(ctx);
-	}
-
-	cairo_surface_flush(sfc);
 
 	cinfo.err = jpeg_std_error(&jerr);
 	jpeg_create_compress(&cinfo);
@@ -75,9 +50,6 @@ int cairo_surface_write_to_jpeg_stream(cairo_surface_t *sfc,
 
 	jpeg_finish_compress(&cinfo);
 	jpeg_destroy_compress(&cinfo);
-
-	if (other != NULL)
-		cairo_surface_destroy(sfc);
 
 	size_t written = fwrite(data, 1, len, stream);
 	if (written < len) {
