@@ -16,7 +16,7 @@
 
 #include "write_jpg.h"
 
-cairo_status_t cairo_surface_write_to_jpeg_stream(cairo_surface_t *sfc,
+int cairo_surface_write_to_jpeg_stream(cairo_surface_t *sfc,
 		FILE *stream, int quality) {
 	struct jpeg_compress_struct cinfo;
 	struct jpeg_error_mgr jerr;
@@ -35,7 +35,8 @@ cairo_status_t cairo_surface_write_to_jpeg_stream(cairo_surface_t *sfc,
 		sfc = cairo_surface_create_similar_image(other, CAIRO_FORMAT_RGB24,
 			x2 - x1, y2 - y1);
 		if (cairo_surface_status(sfc) != CAIRO_STATUS_SUCCESS) {
-			return CAIRO_STATUS_INVALID_FORMAT;
+			fprintf(stderr, "failed to convert image\n");
+			return -1;
 		}
 
 		ctx = cairo_create(sfc);
@@ -78,10 +79,13 @@ cairo_status_t cairo_surface_write_to_jpeg_stream(cairo_surface_t *sfc,
 	if (other != NULL)
 		cairo_surface_destroy(sfc);
 
-	if (fwrite(data, 1, len, stream) < len) {
+	size_t written = fwrite(data, 1, len, stream);
+	if (written < len) {
 		free(data);
-		return CAIRO_STATUS_WRITE_ERROR;
+		fprintf(stderr, "Failed to write jpg; only %zu of %zu bytes written\n",
+			written, len);
+		return -1;
 	}
 	free(data);
-	return CAIRO_STATUS_SUCCESS;
+	return 0;
 }

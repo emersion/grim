@@ -12,7 +12,7 @@
 
 #include "write_ppm.h"
 
-cairo_status_t cairo_surface_write_to_ppm_stream(cairo_surface_t *sfc,
+int cairo_surface_write_to_ppm_stream(cairo_surface_t *sfc,
 		FILE *stream) {
 	// 256 bytes ought to be enough for everyone
 	char header[256];
@@ -46,10 +46,13 @@ cairo_status_t cairo_surface_write_to_ppm_stream(cairo_surface_t *sfc,
 		}
 	}
 
-	if (fwrite(data, 1, len, stream) < len) {
+	size_t written = fwrite(data, 1, len, stream);
+	if (written < len) {
 		free(data);
-		return CAIRO_STATUS_WRITE_ERROR;
+		fprintf(stderr, "Failed to write ppm; only %zu of %zu bytes written\n",
+			written, len);
+		return -1;
 	}
 	free(data);
-	return CAIRO_STATUS_SUCCESS;
+	return 0;
 }
