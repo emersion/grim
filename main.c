@@ -573,49 +573,40 @@ int main(int argc, char *argv[]) {
 		return EXIT_FAILURE;
 	}
 
-	cairo_status_t status = CAIRO_STATUS_INVALID_STATUS;
+	FILE *file;
 	if (strcmp(output_filename, "-") == 0) {
-		switch (output_filetype) {
-		case GRIM_FILETYPE_PPM:
-			status = cairo_surface_write_to_ppm_stream(surface, write_func, stdout);
-			break;
-		case GRIM_FILETYPE_PNG:
-			status = write_to_png_stream(surface, stdout, png_level);
-			break;
-		case GRIM_FILETYPE_JPEG:
-#if HAVE_JPEG
-			status = cairo_surface_write_to_jpeg_stream(surface, write_func,
-				stdout, jpeg_quality);
-			break;
-#else
-			abort();
-#endif
-		}
+		file = stdout;
 	} else {
-		FILE *file;
-		switch (output_filetype) {
-		case GRIM_FILETYPE_PPM:
-			status = cairo_surface_write_to_ppm(surface, output_filepath);
-			break;
-		case GRIM_FILETYPE_PNG:
-			file = fopen(output_filepath, "wb");
-			if (!file) {
-				status = CAIRO_STATUS_WRITE_ERROR;
-			} else {
-				status =  write_to_png_stream(surface, file, png_level);
-				fclose(file);
-			}
-			break;
-		case GRIM_FILETYPE_JPEG:
-#if HAVE_JPEG
-			status = cairo_surface_write_to_jpeg(
-				surface, output_filepath, jpeg_quality);
-			break;
-#else
-			abort();
-#endif
+		file = fopen(output_filepath, "w");
+		if (!file) {
+			fprintf(stderr, "Failed to open file '%s' for writing: %s\n",
+				output_filepath, strerror(errno));
+			return EXIT_FAILURE;
 		}
 	}
+
+	cairo_status_t status = CAIRO_STATUS_INVALID_STATUS;
+	switch (output_filetype) {
+	case GRIM_FILETYPE_PPM:
+		status = cairo_surface_write_to_ppm_stream(surface, write_func, file);
+		break;
+	case GRIM_FILETYPE_PNG:
+		status = write_to_png_stream(surface, file, png_level);
+		break;
+	case GRIM_FILETYPE_JPEG:
+#if HAVE_JPEG
+		status = cairo_surface_write_to_jpeg_stream(surface, write_func,
+			file, jpeg_quality);
+		break;
+#else
+		abort();
+#endif
+	}
+
+	if (strcmp(output_filename, "-") != 0) {
+		fclose(file);
+	}
+
 	if (status != CAIRO_STATUS_SUCCESS) {
 		fprintf(stderr, "%s\n", cairo_status_to_string(status));
 		if (status == CAIRO_STATUS_WRITE_ERROR && strlen(output_filepath) > NAME_MAX) {
