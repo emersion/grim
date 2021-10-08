@@ -35,11 +35,11 @@ static void pack_row32(uint8_t *restrict row_out, const uint32_t *restrict row_i
 	}
 }
 
-cairo_status_t write_to_png_stream(cairo_surface_t *image, FILE *stream,
+int write_to_png_stream(cairo_surface_t *image, FILE *stream,
 		int comp_level) {
 	cairo_format_t format = cairo_image_surface_get_format(image);
 	if (format != CAIRO_FORMAT_RGB24 && format != CAIRO_FORMAT_ARGB32) {
-		return CAIRO_STATUS_INVALID_FORMAT;
+		abort();
 	}
 
 	int width = cairo_image_surface_get_width(image);
@@ -63,26 +63,30 @@ cairo_status_t write_to_png_stream(cairo_surface_t *image, FILE *stream,
 
 	uint8_t *tmp_row = calloc(width, 4);
 	if (!tmp_row) {
-		return CAIRO_STATUS_NO_MEMORY;
+		fprintf(stderr, "failed to allocate temp row\n");
+		return -1;
 	}
 
-	cairo_status_t status = CAIRO_STATUS_SUCCESS;
+	int ret = 0;
 	png_struct *png = png_create_write_struct(PNG_LIBPNG_VER_STRING,
 		NULL, NULL, NULL);
 	png_info *info = NULL;
 	if (!png) {
-		status = CAIRO_STATUS_NO_MEMORY;
+		fprintf(stderr, "failed to allocate png struct\n");
+		ret = -1;
 		goto cleanup;
 	}
 	info = png_create_info_struct(png);
 	if (!info) {
-		status = CAIRO_STATUS_NO_MEMORY;
+		fprintf(stderr, "failed to allocate png write struct\n");
+		ret = -1;
 		goto cleanup;
 	}
 
 #ifdef PNG_SETJMP_SUPPORTED
 	if (setjmp(png_jmpbuf(png))) {
-		status = CAIRO_STATUS_PNG_ERROR;
+		fprintf(stderr, "failed to write png\n");
+		ret = -1;
 		goto cleanup;
 	}
 #endif
@@ -117,5 +121,5 @@ cleanup:
 		png_destroy_write_struct(&png, NULL);
 	}
 	free(tmp_row);
-	return status;
+	return ret;
 }

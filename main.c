@@ -505,34 +505,30 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
-	cairo_status_t status = CAIRO_STATUS_INVALID_STATUS;
+	int ret = 0;
 	switch (output_filetype) {
 	case GRIM_FILETYPE_PPM:
-		status = cairo_surface_write_to_ppm_stream(surface, file);
+		ret = cairo_surface_write_to_ppm_stream(surface, file);
 		break;
 	case GRIM_FILETYPE_PNG:
-		status = write_to_png_stream(surface, file, png_level);
+		ret = write_to_png_stream(surface, file, png_level);
 		break;
 	case GRIM_FILETYPE_JPEG:
 #if HAVE_JPEG
-		status = cairo_surface_write_to_jpeg_stream(surface, file,
+		ret = cairo_surface_write_to_jpeg_stream(surface, file,
 			jpeg_quality);
 		break;
 #else
 		abort();
 #endif
 	}
+	if (ret == -1) {
+		// Error messages will be printed at the source
+		return EXIT_FAILURE;
+	}
 
 	if (strcmp(output_filename, "-") != 0) {
 		fclose(file);
-	}
-
-	if (status != CAIRO_STATUS_SUCCESS) {
-		fprintf(stderr, "%s\n", cairo_status_to_string(status));
-		if (status == CAIRO_STATUS_WRITE_ERROR && strlen(output_filepath) > NAME_MAX) {
-			fprintf(stderr, "Hint: Output filepath length may be too long for your filesystem.");
-		}
-		return EXIT_FAILURE;
 	}
 
 	free(output_filepath);
