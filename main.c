@@ -183,18 +183,6 @@ static const struct wl_registry_listener registry_listener = {
 	.global_remove = handle_global_remove,
 };
 
-static cairo_status_t write_func(void *data, const unsigned char *buf,
-		unsigned int len) {
-	FILE *f = data;
-
-	size_t written = fwrite(buf, sizeof(unsigned char), len, f);
-	if (written < len) {
-		return CAIRO_STATUS_WRITE_ERROR;
-	}
-
-	return CAIRO_STATUS_SUCCESS;
-}
-
 static bool default_filename(char *filename, size_t n, int filetype) {
 	time_t time_epoch = time(NULL);
 	struct tm *time = localtime(&time_epoch);
@@ -527,8 +515,8 @@ int main(int argc, char *argv[]) {
 		break;
 	case GRIM_FILETYPE_JPEG:
 #if HAVE_JPEG
-		status = cairo_surface_write_to_jpeg_stream(surface, write_func,
-			file, jpeg_quality);
+		status = cairo_surface_write_to_jpeg_stream(surface, file,
+			jpeg_quality);
 		break;
 #else
 		abort();

@@ -16,8 +16,8 @@
 
 #include "write_jpg.h"
 
-static cairo_status_t cairo_surface_write_to_jpeg_mem(cairo_surface_t *sfc,
-		unsigned char **data, unsigned long *len, int quality) {
+cairo_status_t cairo_surface_write_to_jpeg_stream(cairo_surface_t *sfc,
+		FILE *stream, int quality) {
 	struct jpeg_compress_struct cinfo;
 	struct jpeg_error_mgr jerr;
 	JSAMPROW row_pointer[1];
@@ -49,7 +49,9 @@ static cairo_status_t cairo_surface_write_to_jpeg_mem(cairo_surface_t *sfc,
 	cinfo.err = jpeg_std_error(&jerr);
 	jpeg_create_compress(&cinfo);
 
-	jpeg_mem_dest(&cinfo, data, len);
+	unsigned char *data = NULL;
+	unsigned long len = 0;
+	jpeg_mem_dest(&cinfo, &data, &len);
 	cinfo.image_width = cairo_image_surface_get_width(sfc);
 	cinfo.image_height = cairo_image_surface_get_height(sfc);
 	if (cairo_image_surface_get_format(sfc) == CAIRO_FORMAT_ARGB32) {
@@ -76,22 +78,10 @@ static cairo_status_t cairo_surface_write_to_jpeg_mem(cairo_surface_t *sfc,
 	if (other != NULL)
 		cairo_surface_destroy(sfc);
 
-	return CAIRO_STATUS_SUCCESS;
-}
-
-cairo_status_t cairo_surface_write_to_jpeg_stream(cairo_surface_t *sfc,
-		cairo_write_func_t write_func, void *closure, int quality) {
-	cairo_status_t e;
-	unsigned char *data = NULL;
-	unsigned long len = 0;
-
-	e = cairo_surface_write_to_jpeg_mem(sfc, &data, &len, quality);
-	if (e == CAIRO_STATUS_SUCCESS) {
-		assert(sizeof(unsigned long) <= sizeof(size_t)
-			|| !(len >> (sizeof(size_t) * CHAR_BIT)));
-		e = write_func(closure, data, len);
+	if (fwrite(data, 1, len, stream) < len) {
 		free(data);
+		return CAIRO_STATUS_WRITE_ERROR;
 	}
-
-	return e;
+	free(data);
+	return CAIRO_STATUS_SUCCESS;
 }
