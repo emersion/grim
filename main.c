@@ -520,7 +520,7 @@ int main(int argc, char *argv[]) {
 	cairo_status_t status = CAIRO_STATUS_INVALID_STATUS;
 	switch (output_filetype) {
 	case GRIM_FILETYPE_PPM:
-		status = cairo_surface_write_to_ppm_stream(surface, write_func, file);
+		status = cairo_surface_write_to_ppm_stream(surface, file);
 		break;
 	case GRIM_FILETYPE_PNG:
 		status = write_to_png_stream(surface, file, png_level);
