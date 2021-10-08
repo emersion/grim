@@ -12,8 +12,8 @@
 
 #include "write_ppm.h"
 
-static cairo_status_t cairo_surface_write_to_ppm_mem(cairo_surface_t *sfc,
-		unsigned char **data, unsigned long *len) {
+cairo_status_t cairo_surface_write_to_ppm_stream(cairo_surface_t *sfc,
+		FILE *stream) {
 	// 256 bytes ought to be enough for everyone
 	char header[256];
 
@@ -23,9 +23,9 @@ static cairo_status_t cairo_surface_write_to_ppm_mem(cairo_surface_t *sfc,
 	int header_len = snprintf(header, sizeof(header), "P6\n%d %d\n255\n", width, height);
 	assert(header_len <= (int)sizeof(header));
 
-	*len = header_len + width * height * 3;
-	unsigned char *buffer = malloc(*len);
-	*data = buffer;
+	size_t len = header_len + width * height * 3;
+	unsigned char *data = malloc(len);
+	unsigned char *buffer = data;
 
 	// We _do_not_ include the null byte
 	memcpy(buffer, header, header_len);
@@ -46,22 +46,10 @@ static cairo_status_t cairo_surface_write_to_ppm_mem(cairo_surface_t *sfc,
 		}
 	}
 
-	return CAIRO_STATUS_SUCCESS;
-}
-
-cairo_status_t cairo_surface_write_to_ppm_stream(cairo_surface_t *sfc,
-		cairo_write_func_t write_func, void *closure) {
-	cairo_status_t e;
-	unsigned char *data = NULL;
-	unsigned long len = 0;
-
-	e = cairo_surface_write_to_ppm_mem(sfc, &data, &len);
-	if (e == CAIRO_STATUS_SUCCESS) {
-		assert(sizeof(unsigned long) <= sizeof(size_t)
-			|| !(len >> (sizeof(size_t) * CHAR_BIT)));
-		e = write_func(closure, data, len);
+	if (fwrite(data, 1, len, stream) < len) {
 		free(data);
+		return CAIRO_STATUS_WRITE_ERROR;
 	}
-
-	return e;
+	free(data);
+	return CAIRO_STATUS_SUCCESS;
 }
