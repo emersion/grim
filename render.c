@@ -129,15 +129,11 @@ static void compute_composite_region(const struct pixman_f_transform *out2com,
 	};
 }
 
-cairo_surface_t *render(struct grim_state *state, struct grim_box *geometry,
+pixman_image_t *render(struct grim_state *state, struct grim_box *geometry,
 		double scale) {
-	cairo_surface_t *surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32,
-		geometry->width * scale, geometry->height * scale);
 	pixman_image_t *common_image = pixman_image_create_bits(PIXMAN_a8r8g8b8,
-		cairo_image_surface_get_width(surface),
-		cairo_image_surface_get_height(surface),
-		(uint32_t *)cairo_image_surface_get_data(surface),
-		cairo_image_surface_get_stride(surface));
+		geometry->width * scale, geometry->height * scale,
+		NULL, 0);
 
 	struct grim_output *output;
 	wl_list_for_each(output, &state->outputs, link) {
@@ -254,7 +250,5 @@ cairo_surface_t *render(struct grim_state *state, struct grim_box *geometry,
 		pixman_image_unref(output_image);
 	}
 
-	pixman_image_unref(common_image);
-	cairo_surface_mark_dirty(surface);
-	return surface;
+	return common_image;
 }
