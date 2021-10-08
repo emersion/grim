@@ -12,7 +12,7 @@
 
 #include "write_ppm.h"
 
-cairo_status_t cairo_surface_write_to_ppm_mem(cairo_surface_t *sfc,
+static cairo_status_t cairo_surface_write_to_ppm_mem(cairo_surface_t *sfc,
 		unsigned char **data, unsigned long *len) {
 	// 256 bytes ought to be enough for everyone
 	char header[256];
@@ -49,16 +49,6 @@ cairo_status_t cairo_surface_write_to_ppm_mem(cairo_surface_t *sfc,
 	return CAIRO_STATUS_SUCCESS;
 }
 
-
-static cairo_status_t cj_write(void *closure, const unsigned char *data,
-		unsigned int length) {
-	if (write((long) closure, data, length) < (ssize_t) length) {
-		return CAIRO_STATUS_WRITE_ERROR;
-	} else {
-		return CAIRO_STATUS_SUCCESS;
-	}
-}
-
 cairo_status_t cairo_surface_write_to_ppm_stream(cairo_surface_t *sfc,
 		cairo_write_func_t write_func, void *closure) {
 	cairo_status_t e;
@@ -73,24 +63,5 @@ cairo_status_t cairo_surface_write_to_ppm_stream(cairo_surface_t *sfc,
 		free(data);
 	}
 
-	return e;
-}
-
-cairo_status_t cairo_surface_write_to_ppm(cairo_surface_t *sfc,
-		const char *filename) {
-	cairo_status_t e;
-	int outfile;
-
-	outfile = open(filename,
-		O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
-
-	if (outfile == -1) {
-		return CAIRO_STATUS_DEVICE_ERROR;
-	}
-
-	e = cairo_surface_write_to_ppm_stream(sfc, cj_write,
-		(void*) (long) outfile);
-
-	close(outfile);
 	return e;
 }
