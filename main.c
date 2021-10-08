@@ -3,6 +3,7 @@
 #include <cairo.h>
 #include <errno.h>
 #include <limits.h>
+#include <pixman.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -560,6 +561,11 @@ int main(int argc, char *argv[]) {
 	if (surface == NULL) {
 		return EXIT_FAILURE;
 	}
+	pixman_image_t *image = pixman_image_create_bits(PIXMAN_a8r8g8b8,
+		cairo_image_surface_get_width(surface),
+		cairo_image_surface_get_height(surface),
+		(uint32_t *)cairo_image_surface_get_data(surface),
+		cairo_image_surface_get_stride(surface));
 
 	FILE *file;
 	if (strcmp(output_filename, "-") == 0) {
@@ -576,7 +582,7 @@ int main(int argc, char *argv[]) {
 	int ret = 0;
 	switch (output_filetype) {
 	case GRIM_FILETYPE_PPM:
-		ret = cairo_surface_write_to_ppm_stream(surface, file);
+		ret = write_to_ppm_stream(image, file);
 		break;
 	case GRIM_FILETYPE_PNG:
 		ret = write_to_png_stream(surface, file, png_level);
@@ -600,6 +606,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	free(output_filepath);
+	pixman_image_unref(image);
 	cairo_surface_destroy(surface);
 
 	struct grim_output *output_tmp;

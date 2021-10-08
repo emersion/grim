@@ -8,17 +8,15 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <cairo.h>
 
 #include "write_ppm.h"
 
-int cairo_surface_write_to_ppm_stream(cairo_surface_t *sfc,
-		FILE *stream) {
+int write_to_ppm_stream(pixman_image_t *image, FILE *stream) {
 	// 256 bytes ought to be enough for everyone
 	char header[256];
 
-	int width = cairo_image_surface_get_width(sfc);
-	int height = cairo_image_surface_get_height(sfc);
+	int width = pixman_image_get_width(image);
+	int height = pixman_image_get_height(image);
 
 	int header_len = snprintf(header, sizeof(header), "P6\n%d %d\n255\n", width, height);
 	assert(header_len <= (int)sizeof(header));
@@ -31,11 +29,11 @@ int cairo_surface_write_to_ppm_stream(cairo_surface_t *sfc,
 	memcpy(buffer, header, header_len);
 	buffer += header_len;
 
-	cairo_format_t cformat = cairo_image_surface_get_format(sfc);
-	assert(cformat == CAIRO_FORMAT_RGB24 || cformat == CAIRO_FORMAT_ARGB32);
+	pixman_format_code_t format = pixman_image_get_format(image);
+	assert(format == PIXMAN_a8r8g8b8 || format == PIXMAN_x8r8g8b8);
 
 	// Both formats are native-endian 32-bit ints
-	uint32_t *pixels = (uint32_t *)cairo_image_surface_get_data(sfc);
+	uint32_t *pixels = pixman_image_get_data(image);
 	for (int y = 0; y < height; y++) {
 		for (int x = 0; x < width; x++) {
 			uint32_t p = *pixels++;
