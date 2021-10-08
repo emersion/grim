@@ -3,7 +3,8 @@ packages:
   - meson
   - wayland
   - wayland-protocols
-  - cairo
+  - pixman
+  - libpng
   - libjpeg-turbo
 sources:
   - https://github.com/emerison/grim

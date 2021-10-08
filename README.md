@@ -66,7 +66,8 @@ Install dependencies:
 
 * meson
 * wayland
-* cairo
+* pixman
+* libpng
 * libjpeg (optional)
 
 Then run:
