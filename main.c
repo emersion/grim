@@ -589,8 +589,7 @@ int main(int argc, char *argv[]) {
 		break;
 	case GRIM_FILETYPE_JPEG:
 #if HAVE_JPEG
-		ret = cairo_surface_write_to_jpeg_stream(surface, file,
-			jpeg_quality);
+		ret = write_to_jpeg_stream(image, file, jpeg_quality);
 		break;
 #else
 		abort();
