@@ -10,7 +10,7 @@
 #include <unistd.h>
 #include <cairo.h>
 
-#include "cairo_ppm.h"
+#include "write_ppm.h"
 
 cairo_status_t cairo_surface_write_to_ppm_mem(cairo_surface_t *sfc,
 		unsigned char **data, unsigned long *len) {

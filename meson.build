@@ -38,7 +38,7 @@ grim_files = [
 	'main.c',
 	'output-layout.c',
 	'render.c',
-	'cairo_ppm.c',
+	'write_ppm.c',
 	'write_png.c',
 ]
 
@@ -53,7 +53,7 @@ grim_deps = [
 ]
 
 if jpeg.found()
-	grim_files += ['cairo_jpg.c']
+	grim_files += ['write_jpg.c']
 	grim_deps += [jpeg]
 endif
 
