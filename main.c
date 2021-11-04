@@ -9,6 +9,7 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
+#include <wordexp.h>
 
 #include "buffer.h"
 #include "grim.h"
@@ -235,20 +236,86 @@ static bool path_exists(const char *path) {
 	return path && access(path, R_OK) != -1;
 }
 
-static const char *get_output_dir(void) {
-	static const char *output_dirs[] = {
-		"GRIM_DEFAULT_DIR",
-		"XDG_PICTURES_DIR",
-	};
-
-	for (size_t i = 0; i < sizeof(output_dirs) / sizeof(char *); ++i) {
-		const char *path = getenv(output_dirs[i]);
-		if (path_exists(path)) {
-			return path;
-		}
+char *get_xdg_pictures_dir(void) {
+	const char *home_dir = getenv("HOME");
+	if (home_dir == NULL) {
+		return NULL;
 	}
 
-	return ".";
+	char *config_file;
+	const char user_dirs_file[] = "user-dirs.dirs";
+	const char config_home_fallback[] = ".config";
+	const char *config_home = getenv("XDG_CONFIG_HOME");
+	if (config_home == NULL || config_home[0] == 0) {
+		size_t size = strlen(home_dir) + strlen("/") +
+				strlen(config_home_fallback) + strlen("/") + strlen(user_dirs_file) + 1;
+		config_file = malloc(size);
+		if (config_file == NULL) {
+			return NULL;
+		}
+		snprintf(config_file, size, "%s/%s/%s", home_dir, config_home_fallback, user_dirs_file);
+	} else {
+		size_t size = strlen(config_home) + strlen("/") + strlen(user_dirs_file) + 1;
+		config_file = malloc(size);
+		if (config_file == NULL) {
+			return NULL;
+		}
+		snprintf(config_file, size, "%s/%s", config_home, user_dirs_file);
+	}
+
+	FILE *file = fopen(config_file, "r");
+	free(config_file);
+	if (file == NULL) {
+		return NULL;
+	}
+
+	char *line = NULL;
+	size_t line_size = 0;
+	ssize_t nread;
+	char *pictures_dir = NULL;
+	while ((nread = getline(&line, &line_size, file)) != -1) {
+		if (nread > 0 && line[nread - 1] == '\n') {
+			line[nread - 1] = '\0';
+		}
+
+		if (strlen(line) == 0 || line[0] == '#') {
+			continue;
+		}
+
+		size_t i = 0;
+		while (line[i] == ' ') {
+			i++;
+		}
+		const char prefix[] = "XDG_PICTURES_DIR=";
+		if (strncmp(&line[i], prefix, strlen(prefix)) == 0) {
+			const char *line_remaining = &line[i] + strlen(prefix);
+			wordexp_t p;
+			if (wordexp(line_remaining, &p, WRDE_UNDEF) == 0) {
+				free(pictures_dir);
+				pictures_dir = strdup(p.we_wordv[0]);
+				wordfree(&p);
+			}
+		}
+	}
+	free(line);
+	fclose(file);
+	return pictures_dir;
+}
+
+char *get_output_dir(void) {
+	const char *grim_default_dir = getenv("GRIM_DEFAULT_DIR");
+	if (path_exists(grim_default_dir)) {
+		return strdup(grim_default_dir);
+	}
+
+	char *xdg_fallback_dir = get_xdg_pictures_dir();
+	if (path_exists(xdg_fallback_dir)) {
+		return xdg_fallback_dir;
+	} else {
+		free(xdg_fallback_dir);
+	}
+
+	return strdup(".");
 }
 
 static const char usage[] =
@@ -385,7 +452,7 @@ int main(int argc, char *argv[]) {
 		}
 		output_filename = tmp;
 
-		const char *output_dir = get_output_dir();
+		char *output_dir = get_output_dir();
 		int len = snprintf(NULL, 0, "%s/%s", output_dir, output_filename);
 		if (len < 0) {
 			perror("snprintf failed");
@@ -393,6 +460,7 @@ int main(int argc, char *argv[]) {
 		}
 		output_filepath = malloc(len + 1);
 		snprintf(output_filepath, len + 1, "%s/%s", output_dir, output_filename);
+		free(output_dir);
 	} else {
 		output_filename = argv[optind];
 		output_filepath = strdup(output_filename);
