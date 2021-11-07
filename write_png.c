@@ -51,7 +51,7 @@ cairo_status_t write_to_png_stream(cairo_surface_t *image, FILE *stream,
 	if (format == CAIRO_FORMAT_ARGB32) {
 		for (int y = 0; y < height; y++) {
 			const uint32_t *row = (const uint32_t *)(data + y * stride);
-			for (int x = 0; x < height; x++) {
+			for (int x = 0; x < width; x++) {
 				if ((row[x] >> 24) != 0xff) {
 					fully_opaque = false;
 				}
