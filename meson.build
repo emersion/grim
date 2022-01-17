@@ -26,6 +26,9 @@ if jpeg.found()
 	add_project_arguments('-DHAVE_JPEG', language: 'c')
 endif
 
+is_le = host_machine.endian() == 'little'
+add_project_arguments('-DGRIM_LITTLE_ENDIAN=@0@'.format(is_le.to_int()), language: 'c')
+
 subdir('contrib/completions')
 subdir('protocol')
 

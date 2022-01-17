@@ -11,6 +11,7 @@
 
 static pixman_format_code_t get_pixman_format(enum wl_shm_format wl_fmt) {
 	switch (wl_fmt) {
+#if GRIM_LITTLE_ENDIAN
 	case WL_SHM_FORMAT_RGB332:
 		return PIXMAN_r3g3b2;
 	case WL_SHM_FORMAT_BGR233:
@@ -63,6 +64,24 @@ static pixman_format_code_t get_pixman_format(enum wl_shm_format wl_fmt) {
 		return PIXMAN_x2r10g10b10;
 	case WL_SHM_FORMAT_XBGR2101010:
 		return PIXMAN_x2b10g10r10;
+#else
+	case WL_SHM_FORMAT_ARGB8888:
+		return PIXMAN_b8g8r8a8;
+	case WL_SHM_FORMAT_XRGB8888:
+		return PIXMAN_b8g8r8x8;
+	case WL_SHM_FORMAT_ABGR8888:
+		return PIXMAN_r8g8b8a8;
+	case WL_SHM_FORMAT_XBGR8888:
+		return PIXMAN_r8g8b8x8;
+	case WL_SHM_FORMAT_BGRA8888:
+		return PIXMAN_a8r8g8b8;
+	case WL_SHM_FORMAT_BGRX8888:
+		return PIXMAN_x8r8g8b8;
+	case WL_SHM_FORMAT_RGBA8888:
+		return PIXMAN_a8b8g8r8;
+	case WL_SHM_FORMAT_RGBX8888:
+		return PIXMAN_x8b8g8r8;
+#endif
 	default:
 		return 0;
 	}
