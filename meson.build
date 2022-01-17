@@ -13,6 +13,10 @@ grim_inc = include_directories('include')
 
 cc = meson.get_compiler('c')
 
+if host_machine.endian() != 'little'
+	error('Only little-endian machines are supported')
+endif
+
 cairo = dependency('cairo')
 png = dependency('libpng')
 jpeg = dependency('libjpeg', required: get_option('jpeg'))
