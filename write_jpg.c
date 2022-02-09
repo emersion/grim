@@ -54,7 +54,7 @@ int write_to_jpeg_stream(pixman_image_t *image, FILE *stream, int quality) {
 	size_t written = fwrite(data, 1, len, stream);
 	if (written < len) {
 		free(data);
-		fprintf(stderr, "Failed to write jpg; only %zu of %zu bytes written\n",
+		fprintf(stderr, "Failed to write jpg; only %zu of %lu bytes written\n",
 			written, len);
 		return -1;
 	}
