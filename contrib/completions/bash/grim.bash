@@ -1,6 +1,7 @@
 _grim() {
 	_init_completion || return
 
+	local CUR PREV
 	CUR="${COMP_WORDS[COMP_CWORD]}"
 	PREV="${COMP_WORDS[COMP_CWORD-1]}"
 
@@ -8,6 +9,7 @@ _grim() {
 		COMPREPLY=($(compgen -W "png ppm jpeg" -- "$CUR"))
 		return
 	elif [[ "$PREV" == "-o" ]]; then
+		local OUTPUTS
 		OUTPUTS="$(swaymsg -t get_outputs 2>/dev/null | \
 			jq -r '.[] | select(.active) | "\(.name)\t\(.make) \(.model)"' 2>/dev/null)"
 
