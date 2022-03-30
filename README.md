@@ -1,5 +1,7 @@
 # grim
 
+> ⚠️ **Heads up!** This project has [moved to SourceHut](https://sr.ht/~emersion/grim/).
+
 Grab images from a Wayland compositor. Works great with [slurp] and with [sway].
 
 ## Example usage
